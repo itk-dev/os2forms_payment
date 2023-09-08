@@ -115,21 +115,21 @@ jobs:
           # Install Drupal
           composer --no-interaction create-project drupal/recommended-project:^9 --stability=dev drupal
           # Copy our module source code into the Drupal module folder.
-          mkdir -p drupal/web/modules/contrib/os2forms_organisation
-          cp -r os2forms_organisation.* composer.json src drupal/web/modules/contrib/os2forms_organisation
+          mkdir -p drupal/web/modules/contrib/os2forms_payment
+          cp -r os2forms_payment.* composer.json src drupal/web/modules/contrib/os2forms_payment
           # Add our module as a composer repository.
-          composer --no-interaction --working-dir=drupal config repositories.os2forms/os2forms_organisation path web/modules/contrib/os2forms_organisation
+          composer --no-interaction --working-dir=drupal config repositories.os2forms/os2forms_payment path web/modules/contrib/os2forms_payment
           # Restore Drupal composer repository.
           composer --no-interaction --working-dir=drupal config repositories.drupal composer https://packages.drupal.org/8
 
           # Require our module.
-          composer --no-interaction --working-dir=drupal require 'os2forms/os2forms_organisation:*'
+          composer --no-interaction --working-dir=drupal require 'os2forms/os2forms_payment:*'
 
           # Check code
           composer --no-interaction --working-dir=drupal require --dev drupal/core-dev
-          cd drupal/web/modules/contrib/os2forms_organisation
+          cd drupal/web/modules/contrib/os2forms_payment
           # Remove our non-dev dependencies to prevent duplicated Drupal installation
-          # PHP Fatal error:  Cannot redeclare drupal_get_filename() (previously declared in /home/runner/work/os2forms_organisation/os2forms_organisation/drupal/web/modules/contrib/os2forms_organisation/vendor/drupal/core/includes/bootstrap.inc:190) in /home/runner/work/os2forms_organisation/os2forms_organisation/drupal/web/core/includes/bootstrap.inc on line 190
+          # PHP Fatal error:  Cannot redeclare drupal_get_filename() (previously declared in /home/runner/work/os2forms_payment/os2forms_payment/drupal/web/modules/contrib/os2forms_payment/vendor/drupal/core/includes/bootstrap.inc:190) in /home/runner/work/os2forms_payment/os2forms_payment/drupal/web/core/includes/bootstrap.inc on line 190
           # Use sed to remove the "require" property in composer.json
           sed -i '/^\s*"require":/,/^\s*}/d' composer.json
           composer --no-interaction install
