@@ -1,0 +1,7 @@
+name: OS2forms payment
+type: module
+description: Accept payments through OS2forms via Nets EasyPay
+package: OS2Forms
+core_version_requirement: ^9
+dependencies:
+  - webform:webform
