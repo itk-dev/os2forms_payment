@@ -1,7 +1,0 @@
-os2forms_payment.createPayment:
-  path: '/os2forms-payment/createPayment'
-  defaults:
-    _title: 'Example'
-    _controller: '\Drupal\os2forms_payment\Controller\Os2formsPaymentController::createPayment'
-  requirements:
-    _permission: 'access content'

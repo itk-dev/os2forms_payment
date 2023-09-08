@@ -2,16 +2,13 @@
 
 namespace Drupal\os2forms_payment\Plugin\WebformElement;
 
-use Drupal\Core\Http\RequestStack;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Http\RequestStack;
+use Drupal\Core\Url;
 use Drupal\os2forms_payment\Helper\PaymentHelper;
 use Drupal\webform\Plugin\WebformElementBase;
 use Drupal\webform\WebformSubmissionInterface;
-use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
-use Drupal\Core\Url;
-use Drupal\quickedit_test\Plugin\InPlaceEditor\WysiwygEditor;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Provides a 'OS2forms_payment' element.
@@ -23,33 +20,28 @@ use Drupal\quickedit_test\Plugin\InPlaceEditor\WysiwygEditor;
  *   category = @Translation("Payment"),
  * )
  */
-class PaymentElement extends WebformElementBase
-{
+class PaymentElement extends WebformElementBase {
 
   private readonly PaymentHelper $paymentHelper;
 
   private readonly RequestStack $requestStack;
-
 
   /**
    * {@inheritdoc}
    *
    * @phpstan-param array<string, mixed> $configuration
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition)
-  {
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->paymentHelper = $container->get(PaymentHelper::class);
     $instance->requestStack = $container->get("request_stack");
     return $instance;
   }
 
-
   /**
    * {@inheritdoc}
    */
-  protected function defineDefaultProperties()
-  {
+  protected function defineDefaultProperties() {
     // Here you define your webform element's default properties,
     // which can be inherited.
     //
@@ -66,8 +58,7 @@ class PaymentElement extends WebformElementBase
   /**
    * {@inheritdoc}
    */
-  public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL)
-  {
+  public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
     // Here you can customize the webform element's properties.
@@ -80,8 +71,7 @@ class PaymentElement extends WebformElementBase
   /**
    * {@inheritdoc}
    */
-  public function form(array $form, FormStateInterface $form_state)
-  {
+  public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
 
     $form['element']['amount_to_pay'] = [
@@ -101,42 +91,41 @@ class PaymentElement extends WebformElementBase
     return $form;
   }
 
-
   /**
    * Alters form.
    *
    * @phpstan-param array<string, mixed> $element
    * @phpstan-param array<string, mixed> $form
    */
-  public function alterForm(array &$element, array &$form, FormStateInterface $form_state): void
-  {
+  public function alterForm(array &$element, array &$form, FormStateInterface $form_state): void {
 
     $form['#attached']['library'][] = 'os2forms_payment/os2forms_payment';
 
     $webform_current_page = $form['progress']['#current_page'];
-    // Check if we are on the preview page
+    // Check if we are on the preview page.
     if ($webform_current_page === "webform_preview") {
 
       $amount_to_pay = $this->paymentHelper->getAmountToPay($form_state->getUserInput(), $this->getElementProperty($element, 'amount_to_pay'));
 
-      // If amount to pay is present, inject placeholder for nets gateway containing amount to pay
+      // If amount to pay is present, inject placeholder for nets gateway containing amount to pay.
       if (!is_null($amount_to_pay) && $amount_to_pay > 0) {
-        $form['content']['#markup'] =  $element['#checkout_page_description'];
+        $form['content']['#markup'] = $element['#checkout_page_description'];
 
         $form['checkout_container'] = [
           '#type' => 'container',
           '#attributes' => [
             'id' => 'checkout-container-div',
             'data-checkout-key' => $this->paymentHelper->getCheckoutKey(),
-            'data-create-payment-url' => Url::fromRoute("os2forms_payment.createPayment", ['amountToPay' => $amount_to_pay])->toString(true)->getGeneratedUrl()
+            'data-create-payment-url' => Url::fromRoute("os2forms_payment.createPayment", ['amountToPay' => $amount_to_pay])->toString(TRUE)->getGeneratedUrl(),
           ],
         ];
         $form['payment_reference_field'] = [
           '#type' => 'hidden',
-          '#name' => 'payment_reference_field'
+          '#name' => 'payment_reference_field',
         ];
       }
     }
 
   }
+
 }

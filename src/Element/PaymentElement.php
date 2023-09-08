@@ -2,9 +2,9 @@
 
 namespace Drupal\os2forms_payment\Element;
 
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Render\Element\FormElement;
-use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Provides an OS2forms payment element'.
@@ -16,11 +16,9 @@ class PaymentElement extends FormElement {
   /**
    * {@inheritdoc}
    */
-
   public function getInfo() {
     // $class = get_class($this);
-
-    // return [
+    // Return [
     //   '#input' => TRUE,
     //     '#id' => 'payment_reference',
     //     '#attributes' => [
@@ -32,7 +30,7 @@ class PaymentElement extends FormElement {
     //     ],
     //     '#theme' => 'input__webform_example_element',
     //     '#theme_wrappers' => ['form_element'],
-    //   ];
+    //   ];.
   }
 
   /**
@@ -40,8 +38,6 @@ class PaymentElement extends FormElement {
    */
   public static function processWebformElementExample(&$element, FormStateInterface $form_state, &$complete_form) {
     // Here you can add and manipulate your element's properties and callbacks.
-
-
     return $element;
   }
 
@@ -65,7 +61,7 @@ class PaymentElement extends FormElement {
    *   The $element with prepared variables ready for theme_element().
    */
   public static function preRenderWebformExampleElement(array $element) {
-    // die("<pre>".print_r($element,true)."</pre>");
+    // die("<pre>".print_r($element,true)."</pre>");.
     $element['#attributes']['type'] = 'text';
     $element['#title_display'] = 'invisible';
     Element::setAttributes($element, ['id', 'name', 'value', 'size', 'maxlength', 'placeholder']);
@@ -74,4 +70,3 @@ class PaymentElement extends FormElement {
   }
 
 }
-

@@ -1,4 +1,0 @@
-services:
-  Drupal\os2forms_payment\Helper\PaymentHelper:
-    arguments:
-      - '@request_stack'
