@@ -1,0 +1,6 @@
+<?php
+use Drupal\os2forms_payment\Helper\PaymentHelper;
+
+function os2forms_payment_webform_submission_presave($submission) {
+  Drupal::service(PaymentHelper::class)->webform_submission_presave($submission);
+}

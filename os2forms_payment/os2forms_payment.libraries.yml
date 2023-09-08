@@ -1,0 +1,8 @@
+os2forms_payment:
+  version: 1.x
+  css:
+    theme:
+      assets/os2forms_payment.css: {}
+  js:
+    assets/os2forms_payment.js: {}
+    https://test.checkout.dibspayment.eu/v1/checkout.js?v=1: {}
