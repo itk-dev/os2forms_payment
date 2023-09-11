@@ -93,9 +93,9 @@ class PaymentElement extends WebformElementBase {
       $amount_to_pay = $this->paymentHelper->getAmountToPay($form_state->getUserInput(), $this->getElementProperty($element, 'amount_to_pay'));
 
       /*
-       * If amount to pay is present,
-       * inject placeholder for nets gateway containing amount to pay.
-       */
+      * If amount to pay is present, 
+      * inject placeholder for nets gateway containing amount to pay.
+      */
       if (!is_null($amount_to_pay) && $amount_to_pay > 0) {
         $form['content']['#markup'] = $element['#checkout_page_description'];
 
@@ -114,5 +114,4 @@ class PaymentElement extends WebformElementBase {
       }
     }
   }
-
 }
