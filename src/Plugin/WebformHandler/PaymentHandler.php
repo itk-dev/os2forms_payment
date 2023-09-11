@@ -3,7 +3,6 @@
 namespace Drupal\webform_create_event\Plugin\WebformHandler;
 
 use Drupal\webform\Plugin\WebformHandlerBase;
-use Drupal\webform\WebformSubmissionInterface;
 
 /**
  * Create a new node entity from a webform submission.
@@ -18,13 +17,6 @@ use Drupal\webform\WebformSubmissionInterface;
  *   submission = \Drupal\webform\Plugin\WebformHandlerInterface::SUBMISSION_REQUIRED,
  * )
  */
-class CreateNodeWebformHandler extends WebformHandlerBase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public function preSave(WebformSubmissionInterface $webform_submission) {
-
-  }
+class PaymentHandler extends WebformHandlerBase {
 
 }

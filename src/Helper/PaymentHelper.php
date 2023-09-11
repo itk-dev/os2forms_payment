@@ -6,35 +6,58 @@ use Drupal\Core\Http\RequestStack;
 use Drupal\Core\Site\Settings;
 
 /**
+ * Payment helper class.
  *
+ * @var \Drupal\os2forms_payment\Helper\PaymentHelper
  */
 class PaymentHelper {
 
-  protected $secret_key;
-
-  protected $checkout_key;
-
-  protected $terms_url;
-
-  protected $callback_url;
 
   /**
+   * Secret key for Nets EasyPay integration.
    *
+   * @var secretKey
+   */
+  protected $secretKey;
+
+  /**
+   * Checkout key for Nets EasyPay integration.
+   *
+   * @var checkoutKey
+   */
+  protected $checkoutKey;
+
+  /**
+   * Terms URL for Nets EasyPay integration.
+   *
+   * @var termsUrl
+   */
+  protected $termsUrl;
+
+  /**
+   * Callback URL for Nets EasyPay integration.
+   *
+   * @var callbackUrl
+   */
+  protected $callbackUrl;
+
+  /**
+   * {@inheritDoc}
    */
   public function __construct(
     private readonly RequestStack $requestStack
   ) {
-    $this->secret_key = Settings::get('os2forms_payment_secret_key');
-    $this->checkout_key = Settings::get('os2forms_payment_checkout_key');
-    $this->terms_url = Settings::get('os2forms_payment_terms_url');
-    $this->callback_url = Settings::get('os2forms_payment_callback_url');
+    $this->secretKey = Settings::get('os2forms_payment_secret_key');
+    $this->checkoutKey = Settings::get('os2forms_payment_checkout_key');
+    $this->termsUrl = Settings::get('os2forms_payment_terms_url');
+    $this->callbackUrl = Settings::get('os2forms_payment_callback_url');
 
   }
 
   /**
-   *
+   * Hook on webform submission presave, modifying data before submission.
    */
-  public function webform_submission_presave($submission) {
+  public function webformSubmissionPresave($submission) {
     $submission_data = $submission->getData();
     $webform_elements = $submission->getWebform()->getElementsDecoded();
 
@@ -57,9 +80,9 @@ class PaymentHelper {
   }
 
   /**
-   *
+   * Returns amount to pay, based on fields responsible for the value.
    */
-  public function getAmountToPay(array $values, string $key):float {
+  public function getAmountToPay(array $values, string $key): float {
     $amount_to_pay = $values[$key] ?? NULL;
 
     if (is_array($amount_to_pay)) {
@@ -70,31 +93,31 @@ class PaymentHelper {
   }
 
   /**
-   *
+   * Returns the secret key for NETS EasyPay.
    */
   public function getSecretKey() {
-    return $this->secret_key;
+    return $this->secretKey;
   }
 
   /**
-   *
+   * Returns the checkout key for NETS EasyPay.
    */
   public function getCheckoutKey() {
-    return $this->checkout_key;
+    return $this->checkoutKey;
   }
 
   /**
-   *
+   * Returns the url displaying the terms and conditions.
    */
   public function getTermsUrl() {
-    return $this->terms_url;
+    return $this->termsUrl;
   }
 
   /**
-   *
+   * Returns the callback URL for the gateway.
    */
   public function getCallbackUrl() {
-    return $this->callback_url;
+    return $this->callbackUrl;
   }
 
 }

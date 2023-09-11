@@ -7,7 +7,6 @@ use Drupal\Core\Http\RequestStack;
 use Drupal\Core\Url;
 use Drupal\os2forms_payment\Helper\PaymentHelper;
 use Drupal\webform\Plugin\WebformElementBase;
-use Drupal\webform\WebformSubmissionInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -21,9 +20,18 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 class PaymentElement extends WebformElementBase {
-
+  /**
+   * Payment helper class.
+   *
+   * @var \Drupal\os2forms_payment\Helper\PaymentHelper
+   */
   private readonly PaymentHelper $paymentHelper;
 
+  /**
+   * Requeststack.
+   *
+   * @var \Drupal\Core\Http\RequestStack
+   */
   private readonly RequestStack $requestStack;
 
   /**
@@ -42,30 +50,10 @@ class PaymentElement extends WebformElementBase {
    * {@inheritdoc}
    */
   protected function defineDefaultProperties() {
-    // Here you define your webform element's default properties,
-    // which can be inherited.
-    //
-    // @see \Drupal\webform\Plugin\WebformElementBase::defaultProperties
-    // @see \Drupal\webform\Plugin\WebformElementBase::defaultBaseProperties
     return [
       'amount_to_pay' => '',
       'checkout_page_description' => '',
     ] + parent::defineDefaultProperties();
-  }
-
-  /* ************************************************************************ */
-
-  /**
-   * {@inheritdoc}
-   */
-  public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
-    parent::prepare($element, $webform_submission);
-
-    // Here you can customize the webform element's properties.
-    // You can also customize the form/render element's properties via the
-    // FormElement.
-    //
-    // @see \Drupal\webform_example_element\Element\WebformExampleElement::processWebformElementExample
   }
 
   /**
@@ -92,10 +80,7 @@ class PaymentElement extends WebformElementBase {
   }
 
   /**
-   * Alters form.
-   *
-   * @phpstan-param array<string, mixed> $element
-   * @phpstan-param array<string, mixed> $form
+   * {@inheritdoc}
    */
   public function alterForm(array &$element, array &$form, FormStateInterface $form_state): void {
 
@@ -107,7 +92,10 @@ class PaymentElement extends WebformElementBase {
 
       $amount_to_pay = $this->paymentHelper->getAmountToPay($form_state->getUserInput(), $this->getElementProperty($element, 'amount_to_pay'));
 
-      // If amount to pay is present, inject placeholder for nets gateway containing amount to pay.
+      /*
+       * If amount to pay is present,
+       * inject placeholder for nets gateway containing amount to pay.
+       */
       if (!is_null($amount_to_pay) && $amount_to_pay > 0) {
         $form['content']['#markup'] = $element['#checkout_page_description'];
 
@@ -125,7 +113,6 @@ class PaymentElement extends WebformElementBase {
         ];
       }
     }
-
   }
 
 }

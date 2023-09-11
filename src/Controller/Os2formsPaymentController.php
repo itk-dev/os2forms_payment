@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 class Os2formsPaymentController extends ControllerBase {
 
   /**
-   *
+   * Constructor.
    */
   public function __construct(
     private readonly PaymentHelper $paymentHelper
@@ -23,7 +23,7 @@ class Os2formsPaymentController extends ControllerBase {
   }
 
   /**
-   * {@inheritdoc}
+   * Create.
    */
   public static function create(ContainerInterface $container) {
     return new static(
@@ -32,7 +32,7 @@ class Os2formsPaymentController extends ControllerBase {
   }
 
   /**
-   *
+   * Create payment.
    */
   public function createPayment(Request $request) {
     $amountToPay = floatval($request->get('amountToPay'));
@@ -65,11 +65,14 @@ class Os2formsPaymentController extends ControllerBase {
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-      'Content-Type: application/json',
-      'Accept: application/json',
-      'Authorization: ' . $this->paymentHelper->getSecretKey(),
-    ]
+    curl_setopt(
+      $ch,
+      CURLOPT_HTTPHEADER,
+      [
+        'Content-Type: application/json',
+        'Accept: application/json',
+        'Authorization: ' . $this->paymentHelper->getSecretKey(),
+      ]
     );
     $result = curl_exec($ch);
     $response = new Response();
