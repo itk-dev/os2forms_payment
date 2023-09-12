@@ -5,7 +5,7 @@ namespace Drupal\os2forms_payment\Plugin\WebformElement;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\os2forms_payment\Helper\PaymentHelper;
-use Drupal\webform\Plugin\WebformElement\WebformElement;
+use Drupal\webform\Plugin\WebformElementBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   category = @Translation("Payment"),
  * )
  */
-class PaymentElement extends WebformElement {
+class PaymentElement extends WebformElementBase {
   /**
    * Payment helper class.
    *
