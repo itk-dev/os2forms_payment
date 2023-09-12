@@ -2,7 +2,6 @@
 
 ## Installation
 
-
 ```sh
 composer require os2forms/payment
 drush pm:enable os2forms_payment

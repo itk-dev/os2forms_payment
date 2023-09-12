@@ -10,5 +10,6 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+
 - Added OS2Forms payment module
 - Cleaned up
