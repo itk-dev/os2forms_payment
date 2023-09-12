@@ -24,6 +24,7 @@ class Os2formsPaymentController extends ControllerBase {
 
   /**
    * Create.
+   * @return Os2formsPaymentController
    */
   public static function create(ContainerInterface $container) {
     return new static(
@@ -33,6 +34,7 @@ class Os2formsPaymentController extends ControllerBase {
 
   /**
    * Create payment.
+   * @return Response
    */
   public function createPayment(Request $request) {
     $amountToPay = floatval($request->get('amountToPay'));

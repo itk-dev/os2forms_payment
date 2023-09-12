@@ -25,14 +25,7 @@ class PaymentElement extends WebformElementBase {
    *
    * @var \Drupal\os2forms_payment\Helper\PaymentHelper
    */
-  private readonly PaymentHelper $paymentHelper;
-
-  /**
-   * Requeststack.
-   *
-   * @var \Drupal\Core\Http\RequestStack
-   */
-  private readonly RequestStack $requestStack;
+  private  PaymentHelper $paymentHelper;
 
   /**
    * {@inheritdoc}
@@ -42,12 +35,13 @@ class PaymentElement extends WebformElementBase {
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->paymentHelper = $container->get(PaymentHelper::class);
-    $instance->requestStack = $container->get("request_stack");
     return $instance;
   }
 
   /**
    * {@inheritdoc}
+   *
+   * @return array<mixed>
    */
   protected function defineDefaultProperties() {
     return [
@@ -58,10 +52,11 @@ class PaymentElement extends WebformElementBase {
 
   /**
    * {@inheritdoc}
+   * @param array<mixed> $form
+   * @return array<mixed>
    */
-  public function form(array $form, FormStateInterface $form_state) {
+  public function form(array $form, FormStateInterface $form_state): array {
     $form = parent::form($form, $form_state);
-
     $form['element']['amount_to_pay'] = [
       '#type' => 'textfield',
       '#title' => $this
@@ -81,6 +76,9 @@ class PaymentElement extends WebformElementBase {
 
   /**
    * {@inheritdoc}
+   * @param array<mixed> $element
+   * @param array<mixed> $form
+   * @return void
    */
   public function alterForm(array &$element, array &$form, FormStateInterface $form_state): void {
 
@@ -96,7 +94,7 @@ class PaymentElement extends WebformElementBase {
        * If amount to pay is present,
        * inject placeholder for nets gateway containing amount to pay.
        */
-      if (!is_null($amount_to_pay) && $amount_to_pay > 0) {
+      if ($amount_to_pay > 0) {
         $form['content']['#markup'] = $element['#checkout_page_description'];
 
         $form['checkout_container'] = [

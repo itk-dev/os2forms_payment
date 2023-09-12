@@ -13,9 +13,10 @@ class PaymentElement extends FormElement {
 
   /**
    * {@inheritdoc}
+   * @return array<mixed>
    */
   public function getInfo() {
-
+    return array();
   }
 
 }

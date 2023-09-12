@@ -9,7 +9,8 @@ use Drupal\os2forms_payment\Helper\PaymentHelper;
 
 /**
  * Webform submission presave hook.
+ * @return void
  */
-function os2forms_payment_webform_submission_presave($submission) {
-  Drupal::service(PaymentHelper::class)->webform_submission_presave($submission);
+function os2forms_payment_webform_submission_presave(mixed $submission): void {
+  Drupal::service(PaymentHelper::class)->webformSubmissionPresave($submission);
 }
