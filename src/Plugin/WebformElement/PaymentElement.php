@@ -3,7 +3,6 @@
 namespace Drupal\os2forms_payment\Plugin\WebformElement;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Http\RequestStack;
 use Drupal\Core\Url;
 use Drupal\os2forms_payment\Helper\PaymentHelper;
 use Drupal\webform\Plugin\WebformElementBase;
@@ -25,7 +24,7 @@ class PaymentElement extends WebformElementBase {
    *
    * @var \Drupal\os2forms_payment\Helper\PaymentHelper
    */
-  private  PaymentHelper $paymentHelper;
+  private PaymentHelper $paymentHelper;
 
   /**
    * {@inheritdoc}
@@ -42,6 +41,7 @@ class PaymentElement extends WebformElementBase {
    * {@inheritdoc}
    *
    * @return array<mixed>
+   *   Returns array of default properties.
    */
   protected function defineDefaultProperties() {
     return [
@@ -52,8 +52,14 @@ class PaymentElement extends WebformElementBase {
 
   /**
    * {@inheritdoc}
+   *
    * @param array<mixed> $form
+   *   Form object.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   Form state object.
+   *
    * @return array<mixed>
+   *   Returns modified form object.
    */
   public function form(array $form, FormStateInterface $form_state): array {
     $form = parent::form($form, $form_state);
@@ -76,9 +82,16 @@ class PaymentElement extends WebformElementBase {
 
   /**
    * {@inheritdoc}
+   *
    * @param array<mixed> $element
+   *   Form element object.
    * @param array<mixed> $form
+   *   Form object.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   Form state object.
+   *
    * @return void
+   *   Return
    */
   public function alterForm(array &$element, array &$form, FormStateInterface $form_state): void {
 

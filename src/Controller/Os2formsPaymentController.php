@@ -24,7 +24,9 @@ class Os2formsPaymentController extends ControllerBase {
 
   /**
    * Create.
+   *
    * @return Os2formsPaymentController
+   *   Return paymentController
    */
   public static function create(ContainerInterface $container) {
     return new static(
@@ -34,7 +36,9 @@ class Os2formsPaymentController extends ControllerBase {
 
   /**
    * Create payment.
-   * @return Response
+   *
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   Returns response containing paymentId from Nets endpoint
    */
   public function createPayment(Request $request) {
     $amountToPay = floatval($request->get('amountToPay'));

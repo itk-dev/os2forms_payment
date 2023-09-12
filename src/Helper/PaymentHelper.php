@@ -55,11 +55,12 @@ class PaymentHelper {
    * Hook on webform submission presave, modifying data before submission.
    *
    * @return void
+   *   Return
    */
   public function webformSubmissionPresave(mixed $submission) {
     $submission_data = $submission->getData();
     $webform_elements = $submission->getWebform()->getElementsDecoded();
-    $payment_element_key = false;
+    $payment_element_key = FALSE;
 
     foreach ($webform_elements as $key => $webform_element) {
       if ($webform_element['#type'] === "os2forms_payment") {
@@ -86,7 +87,12 @@ class PaymentHelper {
    * Returns amount to pay, based on fields responsible for the value.
    *
    * @param array<mixed> $values
+   *   Values contained in the element.
+   * @param string $key
+   *   Selector for the amount to pay, defined in the module.
+   *
    * @return float
+   *   Returns the total amount the user has to pay.
    */
   public function getAmountToPay(array $values, string $key): float {
     $amount_to_pay = $values[$key] ?? NULL;
@@ -102,6 +108,7 @@ class PaymentHelper {
    * Returns the secret key for NETS EasyPay.
    *
    * @return string
+   *   Returns the secret key for the Nets EasyPay integration.
    */
   public function getSecretKey() {
     return $this->secretKey;
@@ -111,6 +118,7 @@ class PaymentHelper {
    * Returns the checkout key for NETS EasyPay.
    *
    * @return string
+   *   Returns the checkout key for the Nets EasyPay integration.
    */
   public function getCheckoutKey() {
     return $this->checkoutKey;
@@ -120,6 +128,7 @@ class PaymentHelper {
    * Returns the url displaying the terms and conditions.
    *
    * @return string
+   *   Returns the url displaying the terms and conditions.
    */
   public function getTermsUrl() {
     return $this->termsUrl;
@@ -129,6 +138,7 @@ class PaymentHelper {
    * Returns the callback URL for the gateway.
    *
    * @return string
+   *   Returns the callback url supplied to the gateway.
    */
   public function getCallbackUrl() {
     return $this->callbackUrl;
