@@ -52,12 +52,14 @@ class NetsEasyController extends ControllerBase {
   public function createPayment(Request $request) {
     // @todo Implement error handling.
     $amountToPay = floatval($request->get('amountToPay'));
-    $is_test_mode = $this->paymentHelper->getTestMode();
-    $endpoint = $is_test_mode ? 'https://test.api.dibspayment.eu/v1/payments' : 'https://api.dibspayment.eu/v1/payments';
+    $callbackUrl = $request->get('callbackUrl') ?? NULL;
+    $endpoint = $this->paymentHelper->getTestMode()
+      ? 'https://test.api.dibspayment.eu/v1/payments'
+      : 'https://api.dibspayment.eu/v1/payments';
     $payload = json_encode([
       'checkout' => [
         'integrationType' => 'EmbeddedCheckout',
-        'url' => 'https://selvbetjening.local.itkdev.dk/da/form/payment',
+        'url' => $callbackUrl,
         'termsUrl' => $this->paymentHelper->getTermsUrl(),
       ],
       'order' => [

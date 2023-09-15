@@ -1,8 +1,5 @@
 os2forms_payment:
   version: 1.x
-  css:
-    theme:
-      assets/os2forms_payment.css: {}
   js:
     assets/os2forms_payment.js: {}
 nets_easy_test:

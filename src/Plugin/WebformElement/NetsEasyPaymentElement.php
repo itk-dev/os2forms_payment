@@ -63,7 +63,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
    */
   public function form(array $form, FormStateInterface $form_state): array {
     $form = parent::form($form, $form_state);
-    $availableElements = $this->getRecipientElements();
+    $availableElements = $this->getAmountElements();
     $form['element']['amount_to_pay'] = [
       '#type' => 'select',
       '#title' => $this->t('Select the element, containing the amount to pay'),
@@ -97,14 +97,10 @@ class NetsEasyPaymentElement extends WebformElementBase {
    */
   public function alterForm(array &$element, array &$form, FormStateInterface $form_state): void {
     $form['#attached']['library'][] = 'os2forms_payment/os2forms_payment';
-    $is_test_mode = \Drupal::service(PaymentHelper::class)->getTestMode();
-
-    if ($is_test_mode) {
-      $form['#attached']['library'][] = 'os2forms_payment/nets_easy_test';
-    }
-    else {
-      $form['#attached']['library'][] = 'os2forms_payment/nets_easy_prod';
-    }
+    $form['#attached']['library'][] = $this->paymentHelper->getTestMode()
+      ? 'os2forms_payment/nets_easy_test'
+      : 'os2forms_payment/nets_easy_prod';
+    $callback_url = Url::fromRoute('<current>')->setAbsolute()->toString(TRUE)->getGeneratedUrl();
     $webform_current_page = $form['progress']['#current_page'];
     // Check if we are on the preview page.
     if ($webform_current_page === "webform_preview") {
@@ -116,14 +112,20 @@ class NetsEasyPaymentElement extends WebformElementBase {
        * inject placeholder for nets gateway containing amount to pay.
        */
       if ($amount_to_pay > 0) {
-        $form['content']['#markup'] = $element['#checkout_page_description'] ?? NULL;
+        if (!empty($element['#checkout_page_description'])) {
+          $form['content']['#markup'] = $element['#checkout_page_description'];
+        }
 
         $form['checkout_container'] = [
           '#type' => 'container',
           '#attributes' => [
             'id' => 'checkout-container-div',
-            'data-checkout-key' => \Drupal::service(PaymentHelper::class)->getCheckoutKey(),
-            'data-create-payment-url' => Url::fromRoute("os2forms_payment.createPayment", ['amountToPay' => $amount_to_pay])->toString(TRUE)->getGeneratedUrl(),
+            'data-checkout-key' => $this->paymentHelper->getCheckoutKey(),
+            'data-create-payment-url' => Url::fromRoute("os2forms_payment.createPayment",
+              [
+                'amountToPay' => $amount_to_pay,
+                'callbackUrl' => $callback_url,
+              ])->toString(TRUE)->getGeneratedUrl(),
           ],
         ];
         $form['payment_reference_field'] = [
@@ -139,7 +141,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
    *
    * @phpstan-return array<string, mixed>
    */
-  private function getRecipientElements(): array {
+  private function getAmountElements(): array {
     $elements = $this->getWebform()->getElementsDecodedAndFlattened();
 
     $elementTypes = [
@@ -149,14 +151,13 @@ class NetsEasyPaymentElement extends WebformElementBase {
     ];
     $elements = array_filter(
       $elements,
-      static function (array $element) use ($elementTypes) {
-        return in_array($element['#type'], $elementTypes, TRUE);
-      }
+      static fn(array $element) => in_array($element['#type'], $elementTypes, TRUE)
     );
 
-    return array_map(static function (array $element) {
-      return $element['#title'];
-    }, $elements);
+    return array_map(
+      static fn(array $element) => $element['#title'],
+      $elements
+    );
   }
 
 }

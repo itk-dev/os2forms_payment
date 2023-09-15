@@ -12,34 +12,6 @@ use Drupal\webform\WebformSubmissionInterface;
 class PaymentHelper {
 
   /**
-   * Secret key for Nets EasyPay integration.
-   *
-   * @var string
-   */
-  public $secretKey;
-
-  /**
-   * Checkout key for Nets EasyPay integration.
-   *
-   * @var string
-   */
-  public $checkoutKey;
-
-  /**
-   * Terms URL for Nets EasyPay integration.
-   *
-   * @var string
-   */
-  public $termsUrl;
-
-  /**
-   * Operate the module in test mode.
-   *
-   * @var bool
-   */
-  public $testMode;
-
-  /**
    * {@inheritDoc}
    */
   public function __construct(
@@ -118,8 +90,8 @@ class PaymentHelper {
    * @return array<mixed>
    *   Returns the settings for the os2forms_payment module.
    */
-  private function getPaymentSettings() {
-    return Settings::get('os2forms_payment');
+  private function getPaymentSettings(): array {
+    return Settings::get('os2forms_payment') ?? [];
   }
 
   /**
@@ -128,8 +100,8 @@ class PaymentHelper {
    * @return string
    *   The Checkout key.
    */
-  public function getCheckoutKey() {
-    return $this->getPaymentSettings()['checkout_key'];
+  public function getCheckoutKey(): string {
+    return $this->getPaymentSettings()['checkout_key'] ?? NULL;
   }
 
   /**
@@ -138,8 +110,8 @@ class PaymentHelper {
    * @return string
    *   The Secret Key.
    */
-  public function getSecretKey() {
-    return $this->getPaymentSettings()['secret_key'];
+  public function getSecretKey(): string {
+    return $this->getPaymentSettings()['secret_key'] ?? NULL;
   }
 
   /**
@@ -148,8 +120,8 @@ class PaymentHelper {
    * @return string
    *   The terms and conditions url.
    */
-  public function getTermsUrl() {
-    return $this->getPaymentSettings()['terms_url'];
+  public function getTermsUrl(): string {
+    return $this->getPaymentSettings()['terms_url'] ?? NULL;
   }
 
   /**
@@ -158,8 +130,8 @@ class PaymentHelper {
    * @return bool
    *   The test mode boolean.
    */
-  public function getTestMode() {
-    return $this->getPaymentSettings()['test_mode'];
+  public function getTestMode(): bool {
+    return $this->getPaymentSettings()['test_mode'] ?? TRUE;
   }
 
 }
