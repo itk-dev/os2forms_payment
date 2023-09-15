@@ -7,9 +7,9 @@ use Drupal\Core\Render\Element\FormElement;
 /**
  * Provides an OS2forms payment element'.
  *
- * @FormElement("os2forms_payment")
+ * @FormElement("os2forms_nets_easy_payment")
  */
-class PaymentElement extends FormElement {
+class NetsEasyPaymentElement extends FormElement {
 
   /**
    * {@inheritdoc}

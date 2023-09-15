@@ -4,6 +4,7 @@ namespace Drupal\os2forms_payment\Helper;
 
 use Drupal\Core\Http\RequestStack;
 use Drupal\Core\Site\Settings;
+use Drupal\webform\WebformSubmissionInterface;
 
 /**
  * Payment helper class.
@@ -15,28 +16,28 @@ class PaymentHelper {
    *
    * @var string
    */
-  protected $secretKey;
+  public $secretKey;
 
   /**
    * Checkout key for Nets EasyPay integration.
    *
    * @var string
    */
-  protected $checkoutKey;
+  public $checkoutKey;
 
   /**
    * Terms URL for Nets EasyPay integration.
    *
    * @var string
    */
-  protected $termsUrl;
+  public $termsUrl;
 
   /**
-   * Callback URL for Nets EasyPay integration.
+   * Operate the module in test mode.
    *
-   * @var string
+   * @var bool
    */
-  protected $callbackUrl;
+  public $testMode;
 
   /**
    * {@inheritDoc}
@@ -44,11 +45,6 @@ class PaymentHelper {
   public function __construct(
     private readonly RequestStack $requestStack
   ) {
-    $this->secretKey = Settings::get('os2forms_payment_secret_key');
-    $this->checkoutKey = Settings::get('os2forms_payment_checkout_key');
-    $this->termsUrl = Settings::get('os2forms_payment_terms_url');
-    $this->callbackUrl = Settings::get('os2forms_payment_callback_url');
-
   }
 
   /**
@@ -57,28 +53,40 @@ class PaymentHelper {
    * @return void
    *   Return
    */
-  public function webformSubmissionPresave(mixed $submission) {
+  public function webformSubmissionPresave(WebFormSubmissionInterface $submission) {
     $submission_data = $submission->getData();
-    $webform_elements = $submission->getWebform()->getElementsDecoded();
-    $payment_element_key = FALSE;
+    $webform_elements = $submission->getWebform()->getElementsDecodedAndFlattened();
+    $payment_element = NULL;
+    $payment_element_machine_name = NULL;
 
     foreach ($webform_elements as $key => $webform_element) {
-      if ($webform_element['#type'] === "os2forms_payment") {
-        $payment_element_key = $key;
+      if ('os2forms_payment' === ($webform_element['#type'] ?? NULL)) {
+        $payment_element = $webform_element;
+        $payment_element_machine_name = $key;
+        break;
       }
     }
-    if (!$payment_element_key) {
+    if (NULL === $payment_element) {
       return;
     }
-    $amount_to_pay_selector = $submission->getWebform()->getElement($payment_element_key)['#amount_to_pay'];
-    $amount_to_pay = $this->getAmountToPay($submission_data, $amount_to_pay_selector);
+    $amount_to_pay = $this->getAmountToPay($submission_data, $payment_element['#amount_to_pay']);
+    /*
+     * The payment_reference_field is not a part of the form submission,
+     * so we get it from the POST payload.
+     * The goal here is to store the payment_id and amount_to_pay
+     * as a JSON object in the os2forms_payment submission value.
+     */
+    $request = $this->requestStack->getCurrentRequest();
 
-    $request = $this->requestStack->getCurrentRequest()->request->all();
-    $payment_object = json_decode($request['payment_reference_field']);
-    $payment_object->details['payment_amount'] = $amount_to_pay;
-
-    if ($request) {
-      $submission_data[$payment_element_key] = json_encode($payment_object);
+    if ($request && $amount_to_pay) {
+      $payment_reference_field = $request->request->get('payment_reference_field');
+      $payment_object = [
+        'paymentObject' => [
+          'payment_id' => $payment_reference_field,
+          'amount' => $amount_to_pay,
+        ],
+      ];
+      $submission_data[$payment_element_machine_name] = json_encode($payment_object);
       $submission->setData($submission_data);
     }
   }
@@ -105,43 +113,53 @@ class PaymentHelper {
   }
 
   /**
-   * Returns the secret key for NETS EasyPay.
+   * Returns the settings for the os2forms_payment module.
    *
-   * @return string
-   *   Returns the secret key for the Nets EasyPay integration.
+   * @return array<mixed>
+   *   Returns the settings for the os2forms_payment module.
    */
-  public function getSecretKey() {
-    return $this->secretKey;
+  private function getPaymentSettings() {
+    return Settings::get('os2forms_payment');
   }
 
   /**
-   * Returns the checkout key for NETS EasyPay.
+   * Returns the checkout key for the nets implementation.
    *
    * @return string
-   *   Returns the checkout key for the Nets EasyPay integration.
+   *   The Checkout key.
    */
   public function getCheckoutKey() {
-    return $this->checkoutKey;
+    return $this->getPaymentSettings()['checkout_key'];
   }
 
   /**
-   * Returns the url displaying the terms and conditions.
+   * Returns the secret key for the nets implementation.
    *
    * @return string
-   *   Returns the url displaying the terms and conditions.
+   *   The Secret Key.
+   */
+  public function getSecretKey() {
+    return $this->getPaymentSettings()['secret_key'];
+  }
+
+  /**
+   * Returns the url for the page displaying terms and conditions.
+   *
+   * @return string
+   *   The terms and conditions url.
    */
   public function getTermsUrl() {
-    return $this->termsUrl;
+    return $this->getPaymentSettings()['terms_url'];
   }
 
   /**
-   * Returns the callback URL for the gateway.
+   * Returns whether the module is operated in test mode.
    *
-   * @return string
-   *   Returns the callback url supplied to the gateway.
+   * @return bool
+   *   The test mode boolean.
    */
-  public function getCallbackUrl() {
-    return $this->callbackUrl;
+  public function getTestMode() {
+    return $this->getPaymentSettings()['test_mode'];
   }
 
 }

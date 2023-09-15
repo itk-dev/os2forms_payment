@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   category = @Translation("Payment"),
  * )
  */
-class PaymentElement extends WebformElementBase {
+class NetsEasyPaymentElement extends WebformElementBase {
   /**
    * Payment helper class.
    *
@@ -63,10 +63,12 @@ class PaymentElement extends WebformElementBase {
    */
   public function form(array $form, FormStateInterface $form_state): array {
     $form = parent::form($form, $form_state);
+    $availableElements = $this->getRecipientElements();
     $form['element']['amount_to_pay'] = [
-      '#type' => 'textfield',
-      '#title' => $this
-        ->t('Machine name of field containing amount to pay'),
+      '#type' => 'select',
+      '#title' => $this->t('Select the element, containing the amount to pay'),
+      '#required' => FALSE,
+      '#options' => $availableElements,
     ];
 
     $form['element']['checkout_page_description'] = [
@@ -94,9 +96,15 @@ class PaymentElement extends WebformElementBase {
    *   Return
    */
   public function alterForm(array &$element, array &$form, FormStateInterface $form_state): void {
-
     $form['#attached']['library'][] = 'os2forms_payment/os2forms_payment';
+    $is_test_mode = \Drupal::service(PaymentHelper::class)->getTestMode();
 
+    if ($is_test_mode) {
+      $form['#attached']['library'][] = 'os2forms_payment/nets_easy_test';
+    }
+    else {
+      $form['#attached']['library'][] = 'os2forms_payment/nets_easy_prod';
+    }
     $webform_current_page = $form['progress']['#current_page'];
     // Check if we are on the preview page.
     if ($webform_current_page === "webform_preview") {
@@ -108,13 +116,13 @@ class PaymentElement extends WebformElementBase {
        * inject placeholder for nets gateway containing amount to pay.
        */
       if ($amount_to_pay > 0) {
-        $form['content']['#markup'] = $element['#checkout_page_description'];
+        $form['content']['#markup'] = $element['#checkout_page_description'] ?? NULL;
 
         $form['checkout_container'] = [
           '#type' => 'container',
           '#attributes' => [
             'id' => 'checkout-container-div',
-            'data-checkout-key' => $this->paymentHelper->getCheckoutKey(),
+            'data-checkout-key' => \Drupal::service(PaymentHelper::class)->getCheckoutKey(),
             'data-create-payment-url' => Url::fromRoute("os2forms_payment.createPayment", ['amountToPay' => $amount_to_pay])->toString(TRUE)->getGeneratedUrl(),
           ],
         ];
@@ -124,6 +132,31 @@ class PaymentElement extends WebformElementBase {
         ];
       }
     }
+  }
+
+  /**
+   * Get recipient elements.
+   *
+   * @phpstan-return array<string, mixed>
+   */
+  private function getRecipientElements(): array {
+    $elements = $this->getWebform()->getElementsDecodedAndFlattened();
+
+    $elementTypes = [
+      'textfield',
+      'hidden',
+      'select',
+    ];
+    $elements = array_filter(
+      $elements,
+      static function (array $element) use ($elementTypes) {
+        return in_array($element['#type'], $elementTypes, TRUE);
+      }
+    );
+
+    return array_map(static function (array $element) {
+      return $element['#title'];
+    }, $elements);
   }
 
 }

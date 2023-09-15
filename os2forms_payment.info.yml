@@ -5,3 +5,5 @@ package: OS2Forms
 core_version_requirement: ^9
 dependencies:
   - webform:webform
+
+configure: os2forms_payment.admin.settings
