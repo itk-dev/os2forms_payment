@@ -6,7 +6,6 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\os2forms_payment\Helper\PaymentHelper;
 use GuzzleHttp\ClientInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -51,7 +50,7 @@ class NetsEasyController extends ControllerBase {
    *   Returns response containing paymentId from Nets endpoint.
    */
   public function createPayment(Request $request) {
-    // TODO: error handling
+    // @todo Implement error handling.
     $amountToPay = floatval($request->get('amountToPay'));
     $is_test_mode = $this->paymentHelper->getTestMode();
     $endpoint = $is_test_mode ? 'https://test.api.dibspayment.eu/v1/payments' : 'https://api.dibspayment.eu/v1/payments';
