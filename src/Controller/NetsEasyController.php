@@ -6,6 +6,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\os2forms_payment\Helper\PaymentHelper;
 use GuzzleHttp\ClientInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -50,7 +51,10 @@ class NetsEasyController extends ControllerBase {
    *   Returns response containing paymentId from Nets endpoint.
    */
   public function createPayment(Request $request) {
+    // TODO: error handling
     $amountToPay = floatval($request->get('amountToPay'));
+    $is_test_mode = $this->paymentHelper->getTestMode();
+    $endpoint = $is_test_mode ? 'https://test.api.dibspayment.eu/v1/payments' : 'https://api.dibspayment.eu/v1/payments';
     $payload = json_encode([
       'checkout' => [
         'integrationType' => 'EmbeddedCheckout',
@@ -77,7 +81,7 @@ class NetsEasyController extends ControllerBase {
 
     $response = $this->httpClient->request(
       'POST',
-      'https://test.api.dibspayment.eu/v1/payments',
+      $endpoint,
       [
         'headers' => [
           'Content-Type' => 'application/json',
@@ -87,12 +91,9 @@ class NetsEasyController extends ControllerBase {
         'body' => $payload,
       ]
     );
-    $body = $response->getBody()->getContents();
+    $result = $response->getBody()->getContents();
 
-    $response = new Response();
-    $response->setContent($body);
-    return $response;
-
+    return new Response($result);
   }
 
 }

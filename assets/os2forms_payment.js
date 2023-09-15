@@ -7,7 +7,6 @@ window.addEventListener("load", () => {
 
 function initPaymentWindow(checkoutContainer) {
   const { checkoutKey, createPaymentUrl } = checkoutContainer.dataset;
-
   const request = new XMLHttpRequest();
   request.open("POST", createPaymentUrl, true);
   request.onload = function () {
@@ -22,6 +21,8 @@ function initPaymentWindow(checkoutContainer) {
       paymentId: paymentId,
       containerId: checkoutContainer.id,
     };
+
+
     const checkout = new Dibs.Checkout(checkoutOptions);
     checkout.on("payment-completed", function (payload) {
       const paymentIdCompleted = payload.paymentId;
