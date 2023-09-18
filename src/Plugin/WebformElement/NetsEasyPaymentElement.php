@@ -111,28 +111,27 @@ class NetsEasyPaymentElement extends WebformElementBase {
        * If amount to pay is present,
        * inject placeholder for nets gateway containing amount to pay.
        */
-      if ($amount_to_pay > 0) {
-        if (!empty($element['#checkout_page_description'])) {
-          $form['content']['#markup'] = $element['#checkout_page_description'];
-        }
-
-        $form['checkout_container'] = [
-          '#type' => 'container',
-          '#attributes' => [
-            'id' => 'checkout-container-div',
-            'data-checkout-key' => $this->paymentHelper->getCheckoutKey(),
-            'data-create-payment-url' => Url::fromRoute("os2forms_payment.createPayment",
-              [
-                'amountToPay' => $amount_to_pay,
-                'callbackUrl' => $callback_url,
-              ])->toString(TRUE)->getGeneratedUrl(),
-          ],
-        ];
-        $form['payment_reference_field'] = [
-          '#type' => 'hidden',
-          '#name' => 'payment_reference_field',
-        ];
+      if (!empty($element['#checkout_page_description'])) {
+        $form['os2forms_payment_content']['#markup'] = $element['#checkout_page_description'];
       }
+
+      $form['checkout_container'] = [
+        '#type' => 'container',
+        '#attributes' => [
+          'id' => 'checkout-container-div',
+          'data-checkout-key' => $this->paymentHelper->getCheckoutKey(),
+          'data-payment-error-message' => $this->t('Der skete en fejl. Prøv venligst igen senere'),
+          'data-create-payment-url' => Url::fromRoute("os2forms_payment.createPayment",
+            [
+              'amountToPay' => $amount_to_pay,
+              'callbackUrl' => $callback_url,
+            ])->toString(TRUE)->getGeneratedUrl(),
+        ],
+      ];
+      $form['payment_reference_field'] = [
+        '#type' => 'hidden',
+        '#name' => 'payment_reference_field',
+      ];
     }
   }
 

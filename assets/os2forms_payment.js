@@ -6,13 +6,13 @@ window.addEventListener("load", () => {
 });
 
 function initPaymentWindow(checkoutContainer, retried = false) {
-  const { checkoutKey, createPaymentUrl } = checkoutContainer.dataset;
+  const { checkoutKey, createPaymentUrl, paymentErrorMessage } = checkoutContainer.dataset;
   const request = new XMLHttpRequest();
   request.open("POST", createPaymentUrl, true);
   request.onload = function () {
     const data = JSON.parse(this.response);
     if (!data.paymentId) {
-      console.error("Error: Check output from create-payment.php");
+        alert(paymentErrorMessage);
       return;
     }
     const paymentId = data.paymentId;
@@ -24,7 +24,6 @@ function initPaymentWindow(checkoutContainer, retried = false) {
 
 
     const checkout = new Dibs.Checkout(checkoutOptions);
-    console.log(checkout);
     checkout.on("payment-completed", function (payload) {
       const paymentIdCompleted = payload.paymentId;
       if (paymentId === paymentIdCompleted) {
@@ -33,13 +32,13 @@ function initPaymentWindow(checkoutContainer, retried = false) {
         ).value = paymentIdCompleted;
         document.getElementById("edit-submit").click();
       } else {
-        console.log("payment id mismatch");
+        alert(paymentErrorMessage)
       }
     });
   };
   request.onerror = function () {
     if (retried) {
-      alert("Der kunne ikke oprettes forbindelse til betalingsgatewayen. Prøv venligt igen senere.");
+      alert(paymentErrorMessage);
       return;
     } else {
       initPaymentWindow(checkoutContainer, true);

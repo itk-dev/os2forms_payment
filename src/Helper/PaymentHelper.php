@@ -100,7 +100,7 @@ class PaymentHelper {
    * @return string
    *   The Checkout key.
    */
-  public function getCheckoutKey(): string {
+  public function getCheckoutKey(): ?string {
     return $this->getPaymentSettings()['checkout_key'] ?? NULL;
   }
 
@@ -110,7 +110,7 @@ class PaymentHelper {
    * @return string
    *   The Secret Key.
    */
-  public function getSecretKey(): string {
+  public function getSecretKey(): ?string {
     return $this->getPaymentSettings()['secret_key'] ?? NULL;
   }
 
@@ -120,7 +120,7 @@ class PaymentHelper {
    * @return string
    *   The terms and conditions url.
    */
-  public function getTermsUrl(): string {
+  public function getTermsUrl(): ?string {
     return $this->getPaymentSettings()['terms_url'] ?? NULL;
   }
 
