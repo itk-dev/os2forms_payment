@@ -120,7 +120,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
         '#attributes' => [
           'id' => 'checkout-container-div',
           'data-checkout-key' => $this->paymentHelper->getCheckoutKey(),
-          'data-payment-error-message' => $this->t('Der skete en fejl. Prøv venligst igen senere'),
+          'data-payment-error-message' => $this->t('An error has occurred. Please try again later.'),
           'data-create-payment-url' => Url::fromRoute("os2forms_payment.createPayment",
             [
               'amountToPay' => $amount_to_pay,

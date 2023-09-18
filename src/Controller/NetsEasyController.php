@@ -53,8 +53,8 @@ class NetsEasyController extends ControllerBase {
     $amountToPay = floatval($request->get('amountToPay'));
     $callbackUrl = $request->get('callbackUrl');
 
-    if (!$callbackUrl || $amountToPay >= 0) {
-      return new Response(json_encode(["error" => $this->t("Der skete en fejl. Kontakt venligst administrator.")]));
+    if (!$callbackUrl || $amountToPay <= 0) {
+      return new Response(json_encode(['error' => $this->t('An error has occurred. Please try again later.')]));
     }
     $endpoint = $this->paymentHelper->getTestMode()
       ? 'https://test.api.dibspayment.eu/v1/payments'
