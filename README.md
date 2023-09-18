@@ -18,11 +18,13 @@ $settings['os2forms_payment']['test_mode'] = 'Boolean describing whether the mod
 
 ## Setup
 
-Ensure that the values described above is set in your Settings.php <br><br>
-Create a new webform <br>
-Goto Indstillinger -> Formular -> Form preview settings -> Enable preview page (Obligatorisk) <br>
-Insert the payment module in the webform.<br>
-Go to the payment element settings and select the element containing the amount to pay (field types: Skjult, Vælg).<br>
+Ensure that the values described above is set in your Settings.php\
+\
+Create a new webform\
+Goto Indstillinger -> Formular -> Form preview settings -> Enable preview page (Obligatorisk)\
+Insert the payment module in the webform.\
+Go to the payment element settings and select the element containing the\
+amount to pay (field types: Skjult, Vælg).\
 Test if the Nets gateway appears on the Review page.
 
 ## Coding standards
