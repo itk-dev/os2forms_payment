@@ -50,7 +50,6 @@ class NetsEasyController extends ControllerBase {
    *   Returns response containing paymentId from Nets endpoint.
    */
   public function createPayment(Request $request) {
-    // @todo Implement error handling.
     $amountToPay = floatval($request->get('amountToPay'));
     $callbackUrl = $request->get('callbackUrl');
 
