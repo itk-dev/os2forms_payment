@@ -13,8 +13,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @WebformElement(
  *   id = "os2forms_payment",
- *   label = @Translation("OS2forms payment element"),
- *   description = @Translation("Provides a payment element."),
+ *   label = @Translation("OS2forms betalingsmodul"),
+ *   description = @Translation("Provides a os2forms_payment element."),
  *   category = @Translation("Payment"),
  * )
  */
