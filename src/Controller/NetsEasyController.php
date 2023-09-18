@@ -51,6 +51,8 @@ class NetsEasyController extends ControllerBase {
    */
   public function createPayment(Request $request) {
     $amountToPay = floatval($request->get('amountToPay'));
+    // Amount to pay is defined in the lowest monetary unit.
+    $amountToPay *= 100;
     $callbackUrl = $request->get('callbackUrl');
 
     if (!$callbackUrl || $amountToPay <= 0) {
