@@ -27,7 +27,7 @@ class NetsEasyController extends ControllerBase {
    * Create.
    *
    * @return NetsEasyController
-   *   Return paymentController
+   *   Return NetsEasyController
    */
   public static function create(ContainerInterface $container) {
     return new static(
@@ -49,7 +49,7 @@ class NetsEasyController extends ControllerBase {
    * @return \Symfony\Component\HttpFoundation\Response
    *   Returns response containing paymentId from Nets endpoint.
    */
-  public function createPayment(Request $request) {
+  public function createPayment(Request $request): Response {
     $amountToPay = floatval($request->get('amountToPay'));
     // Amount to pay is defined in the lowest monetary unit.
     $amountToPay *= 100;
@@ -69,15 +69,15 @@ class NetsEasyController extends ControllerBase {
       ],
       'order' => [
         'items' => [
-            [
-              'reference' => 'reference',
-              'name' => 'product',
-              'quantity' => 1,
-              'unit' => 'pcs',
-              'unitPrice' => $amountToPay,
-              'grossTotalAmount' => $amountToPay,
-              'netTotalAmount' => $amountToPay,
-            ],
+          [
+            'reference' => 'reference',
+            'name' => 'product',
+            'quantity' => 1,
+            'unit' => 'pcs',
+            'unitPrice' => $amountToPay,
+            'grossTotalAmount' => $amountToPay,
+            'netTotalAmount' => $amountToPay,
+          ],
         ],
         'amount' => $amountToPay,
         'currency' => 'DKK',
@@ -100,6 +100,37 @@ class NetsEasyController extends ControllerBase {
     $result = $response->getBody()->getContents();
 
     return new Response($result);
+  }
+
+  /**
+   * Validates a given payment via the Nets Payment API.
+   *
+   * @param string $endpoint
+   *   Nets Payment API endpoint.
+   *
+   * @return bool
+   *   Returns validation results.
+   */
+  public function validatePayment($endpoint): bool {
+    $response = $this->httpClient->request(
+      'GET',
+      $endpoint,
+      [
+        'headers' => [
+          'Content-Type' => 'application/json',
+          'Accept' => 'application/json',
+          'Authorization' => $this->paymentHelper->getSecretKey(),
+        ],
+      ]
+    );
+    $result = json_decode($response->getBody()->getContents());
+    $reservedAmount = $result->payment->summary->reservedAmount ?? NULL;
+    $chargedAmount = $result->payment->summary->chargedAmount ?? NULL;
+    if (!$reservedAmount || !$chargedAmount) {
+      return FALSE;
+    }
+
+    return $reservedAmount === $chargedAmount;
   }
 
 }

@@ -15,7 +15,7 @@ class PaymentHelper {
    * {@inheritDoc}
    */
   public function __construct(
-    private readonly RequestStack $requestStack
+    private readonly RequestStack $requestStack,
   ) {
   }
 
@@ -49,9 +49,9 @@ class PaymentHelper {
      * as a JSON object in the os2forms_payment submission value.
      */
     $request = $this->requestStack->getCurrentRequest();
+    $payment_reference_field = $request->request->get('payment_reference_field');
 
     if ($request && $amount_to_pay) {
-      $payment_reference_field = $request->request->get('payment_reference_field');
       $payment_object = [
         'paymentObject' => [
           'payment_id' => $payment_reference_field,

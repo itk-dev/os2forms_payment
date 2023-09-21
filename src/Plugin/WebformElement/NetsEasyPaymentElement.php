@@ -6,6 +6,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\os2forms_payment\Helper\PaymentHelper;
 use Drupal\webform\Plugin\WebformElementBase;
+use Drupal\webform\WebformSubmissionInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -127,6 +128,8 @@ class NetsEasyPaymentElement extends WebformElementBase {
               'callbackUrl' => $callback_url,
             ])->toString(TRUE)->getGeneratedUrl(),
         ],
+        '#limit_validation_errors' => [],
+        '#element_validate' => [[get_class($this), 'validateOptions']],
       ];
       $form['payment_reference_field'] = [
         '#type' => 'hidden',
@@ -136,9 +139,94 @@ class NetsEasyPaymentElement extends WebformElementBase {
   }
 
   /**
-   * Get recipient elements.
+   * Validates the payment object.
    *
-   * @phpstan-return array<string, mixed>
+   * @param array<mixed> $element
+   *   Form element object.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   Form state object.
+   *
+   * @return mixed
+   *   Returns validation results.
+   */
+  public static function validateOptions(array &$element, FormStateInterface $form_state): mixed {
+    $paymentHelper = \Drupal::service('Drupal\os2forms_payment\Helper\PaymentHelper');
+    $netsEasyController = \Drupal::service('Drupal\os2forms_payment\Controller\NetsEasyController');
+
+    $paymentId = $form_state->getValue('payment_reference_field');
+    if (!$paymentId) {
+      return $form_state->setError(
+        $element,
+        t('An error occurred. Please try again later.')
+      );
+    }
+
+    $endpoint = $paymentHelper->getTestMode()
+      ? 'https://test.api.dibspayment.eu/v1/payments/' . $paymentId
+      : 'https://api.dibspayment.eu/v1/payments/' . $paymentId;
+
+    $paymentValidated = $netsEasyController->validatePayment($endpoint);
+
+    if (!$paymentValidated) {
+      return $form_state->setError(
+        $element,
+        t('The payment could not be validated. Please try again.')
+      );
+    }
+    return TRUE;
+  }
+
+  /**
+   * Modifies how the payment details is displayed under "Resultater".
+   *
+   * @param array<mixed> $element
+   *   Form element object.
+   * @param \Drupal\webform\WebformSubmissionInterface $webform_submission
+   *   Form submission object.
+   * @param array<mixed> $options
+   *   Result view details.
+   *
+   * @return mixed
+   *   Returns content for the results view.
+   */
+  protected function formatHtmlItem(array $element, WebformSubmissionInterface $webform_submission, array $options = []): mixed {
+
+    if ($options) {
+      $payment_element_data = NULL;
+      foreach ($webform_submission->getData() as $key => $data) {
+        if ($key === 'payment_element') {
+          $payment_element_data = $data;
+        }
+      }
+      if ($payment_element_data) {
+        $payment_data = json_decode($payment_element_data)->paymentObject;
+        $form['payment_id'] = [
+          '#type' => 'item',
+          '#title' => $this->t('Betalings ID'),
+          '#markup' => $payment_data->payment_id ?? "{Tom}" ?: "{Tom}",
+        ];
+        $form['amount'] = [
+          '#type' => 'item',
+          '#title' => $this->t('Beløb'),
+          '#markup' => $payment_data->amount . ',-',
+        ];
+        return $form;
+      }
+      else {
+        return '{Tom}';
+      }
+    }
+    else {
+      return '[Betalingsinfo]';
+    }
+
+  }
+
+  /**
+   * Returns available elements for containing amount to pay.
+   *
+   * @return array<mixed>
+   *   Returns array of elements.
    */
   private function getAmountElements(): array {
     $elements = $this->getWebform()->getElementsDecodedAndFlattened();
