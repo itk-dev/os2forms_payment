@@ -116,7 +116,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
         $form['os2forms_payment_content']['#markup'] = $element['#checkout_page_description'];
       }
 
-      $form['checkout_container'] = [
+      $form['os2forms_payment_checkout_container'] = [
         '#type' => 'container',
         '#attributes' => [
           'id' => 'checkout-container-div',
@@ -131,7 +131,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
         '#limit_validation_errors' => [],
         '#element_validate' => [[get_class($this), 'validateOptions']],
       ];
-      $form['payment_reference_field'] = [
+      $form['os2forms_payment_payment_reference_field'] = [
         '#type' => 'hidden',
         '#name' => 'payment_reference_field',
       ];
@@ -153,7 +153,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
     $paymentHelper = \Drupal::service('Drupal\os2forms_payment\Helper\PaymentHelper');
     $netsEasyController = \Drupal::service('Drupal\os2forms_payment\Controller\NetsEasyController');
 
-    $paymentId = $form_state->getValue('payment_reference_field');
+    $paymentId = $form_state->getValue('os2forms_payment_payment_reference_field');
     if (!$paymentId) {
       return $form_state->setError(
         $element,
