@@ -48,6 +48,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
     return [
       'amount_to_pay' => '',
       'checkout_page_description' => '',
+      'payment_methods' => ['Card'],
     ] + parent::defineDefaultProperties();
   }
 
@@ -70,6 +71,8 @@ class NetsEasyPaymentElement extends WebformElementBase {
       '#title' => $this->t('Select the element, containing the amount to pay'),
       '#required' => FALSE,
       '#options' => $availableElements,
+      '#description' => $this
+        ->t('The field containing the amount to pay can be of type: textfield, hidden or select.'),
     ];
 
     $form['element']['checkout_page_description'] = [
@@ -79,6 +82,16 @@ class NetsEasyPaymentElement extends WebformElementBase {
       '#description' => $this
         ->t('This field supports simple html'),
     ];
+
+    $form['element']['payment_methods'] = [
+      '#type' => 'checkboxes',
+      '#title' => $this->t('Select available payment methods'),
+      '#options' => [
+        'Card' => 'Kortbetaling',
+        'MobilePay' => 'MobilePay',
+      ],
+    ];
+
 
     return $form;
   }
@@ -101,19 +114,24 @@ class NetsEasyPaymentElement extends WebformElementBase {
     $form['#attached']['library'][] = $this->paymentHelper->getTestMode()
       ? 'os2forms_payment/nets_easy_test'
       : 'os2forms_payment/nets_easy_prod';
+
     $callback_url = Url::fromRoute('<current>')->setAbsolute()->toString(TRUE)->getGeneratedUrl();
     $webform_current_page = $form['progress']['#current_page'];
     // Check if we are on the preview page.
     if ($webform_current_page === "webform_preview") {
 
       $amount_to_pay = $this->paymentHelper->getAmountToPay($form_state->getUserInput(), $this->getElementProperty($element, 'amount_to_pay'));
-
       /*
        * If amount to pay is present,
        * inject placeholder for nets gateway containing amount to pay.
        */
       if (!empty($element['#checkout_page_description'])) {
         $form['os2forms_payment_content']['#markup'] = $element['#checkout_page_description'];
+      }
+
+      $paymentMethods = [];
+      if (!empty($element['#payment_methods'])) {
+        $paymentMethods = http_build_query(array_filter(array_values($element['#payment_methods'])));
       }
 
       $form['os2forms_payment_checkout_container'] = [
@@ -126,6 +144,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
             [
               'amountToPay' => $amount_to_pay,
               'callbackUrl' => $callback_url,
+              'paymentMethods' => $paymentMethods,
             ])->toString(TRUE)->getGeneratedUrl(),
         ],
         '#limit_validation_errors' => [],

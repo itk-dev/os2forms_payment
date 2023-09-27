@@ -135,5 +135,4 @@ class PaymentHelper {
   public function getTestMode(): bool {
     return $this->getPaymentSettings()['test_mode'] ?? TRUE;
   }
-
 }
