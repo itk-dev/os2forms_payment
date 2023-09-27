@@ -67,6 +67,16 @@ class NetsEasyController extends ControllerBase {
         'url' => $callbackUrl,
         'termsUrl' => $this->paymentHelper->getTermsUrl(),
       ],
+      'paymentMethodsConfiguration' => [
+        [
+          'name' => 'Card',
+          'enabled' => TRUE,
+        ],
+        [
+          'name' => 'MobilePay',
+          'enabled' => TRUE,
+        ],
+      ],
       'order' => [
         'items' => [
           [
@@ -126,11 +136,53 @@ class NetsEasyController extends ControllerBase {
     $result = json_decode($response->getBody()->getContents());
     $reservedAmount = $result->payment->summary->reservedAmount ?? NULL;
     $chargedAmount = $result->payment->summary->chargedAmount ?? NULL;
-    if (!$reservedAmount || !$chargedAmount) {
+
+    if ($reservedAmount && !$chargedAmount) {
+      // Payment is reserved, but not yet charged.
+      $paymentCharged = $this->chargePayment($endpoint, $reservedAmount);
+      return $paymentCharged;
+    }
+
+    if (!$reservedAmount && !$chargedAmount) {
+      // Reservation was not made.
       return FALSE;
     }
 
     return $reservedAmount === $chargedAmount;
+  }
+
+  /**
+   * Charges a given payment via the Nets Payment API.
+   *
+   * @param string $endpoint
+   *   Nets Payment API endpoint.
+   * @param string $reservedAmount
+   *   The reserved amount to be charged.
+   *
+   * @return bool
+   *   Returns whether the payment was charged.
+   */
+  private function chargePayment($endpoint, $reservedAmount) {
+    $endpoint = $endpoint . '/charges';
+
+    $response = $this->httpClient->request(
+      'POST',
+      $endpoint,
+      [
+        'headers' => [
+          'Content-Type' => 'application/json',
+          'Accept' => 'application/json',
+          'Authorization' => $this->paymentHelper->getSecretKey(),
+        ],
+        'json' => [
+          'amount' => $reservedAmount,
+        ],
+
+      ]
+    );
+
+    $result = json_decode($response->getBody()->getContents());
+    return (bool) $result->chargeId;
   }
 
 }

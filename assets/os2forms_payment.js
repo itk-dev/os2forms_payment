@@ -22,7 +22,6 @@ function initPaymentWindow(checkoutContainer, retried = false) {
       containerId: checkoutContainer.id,
     };
 
-
     const checkout = new Dibs.Checkout(checkoutOptions);
     checkout.on("payment-completed", function (payload) {
       const paymentIdCompleted = payload.paymentId;

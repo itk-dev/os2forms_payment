@@ -157,7 +157,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
     if (!$paymentId) {
       return $form_state->setError(
         $element,
-        t('An error occurred. Please try again later.')
+        t('The form could not be submitted. Please try again.')
       );
     }
 
@@ -173,6 +173,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
         t('The payment could not be validated. Please try again.')
       );
     }
+
     return TRUE;
   }
 
@@ -190,27 +191,27 @@ class NetsEasyPaymentElement extends WebformElementBase {
    *   Returns content for the results view.
    */
   protected function formatHtmlItem(array $element, WebformSubmissionInterface $webform_submission, array $options = []): mixed {
+    $isAdminPage = \Drupal::service('router.admin_context')->isAdminRoute();
 
-    if ($options) {
-      $payment_element_data = NULL;
-      foreach ($webform_submission->getData() as $key => $data) {
-        if ($key === 'payment_element') {
-          $payment_element_data = $data;
-        }
-      }
+    if ($isAdminPage) {
+      $payment_element_data = $webform_submission->getData()[$element['#webform_key']] ?? NULL;
       if ($payment_element_data) {
-        $payment_data = json_decode($payment_element_data)->paymentObject;
-        $form['payment_id'] = [
-          '#type' => 'item',
-          '#title' => $this->t('Betalings ID'),
-          '#markup' => $payment_data->payment_id ?? "{Tom}" ?: "{Tom}",
-        ];
-        $form['amount'] = [
-          '#type' => 'item',
-          '#title' => $this->t('Beløb'),
-          '#markup' => $payment_data->amount . ',-',
-        ];
-        return $form;
+        $payment_data = json_decode($payment_element_data)->paymentObject ?? NULL;
+        if ($payment_data) {
+          $form['payment_id'] = [
+            '#type' => 'item',
+            '#title' => $this->t('Betalings ID'),
+            '#markup' => $payment_data->payment_id ?? '{Tom}' ?: '{Tom}',
+          ];
+          $form['amount'] = [
+            '#type' => 'item',
+            '#title' => $this->t('Beløb'),
+            '#markup' => $payment_data->amount,
+          ];
+          return $form;
+        } else {
+          return '{Tom}';
+        }
       }
       else {
         return '{Tom}';

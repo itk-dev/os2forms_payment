@@ -26,7 +26,6 @@ class PaymentHelper {
    *   Return
    */
   public function webformSubmissionPresave(WebFormSubmissionInterface $submission) {
-    $submission_data = $submission->getData();
     $webform_elements = $submission->getWebform()->getElementsDecodedAndFlattened();
     $payment_element = NULL;
     $payment_element_machine_name = NULL;
@@ -41,6 +40,8 @@ class PaymentHelper {
     if (NULL === $payment_element) {
       return;
     }
+
+    $submission_data = $submission->getData();
     $amount_to_pay = $this->getAmountToPay($submission_data, $payment_element['#amount_to_pay']);
     /*
      * The payment_reference_field is not a part of the form submission,
@@ -58,6 +59,7 @@ class PaymentHelper {
           'amount' => $amount_to_pay,
         ],
       ];
+
       $submission_data[$payment_element_machine_name] = json_encode($payment_object);
       $submission->setData($submission_data);
     }
