@@ -191,34 +191,29 @@ class NetsEasyPaymentElement extends WebformElementBase {
    *   Returns content for the results view.
    */
   protected function formatHtmlItem(array $element, WebformSubmissionInterface $webform_submission, array $options = []): mixed {
-    $isAdminPage = \Drupal::service('router.admin_context')->isAdminRoute();
+    $payment_element_data = $webform_submission->getData()[$element['#webform_key']] ?? NULL;
 
-    if ($isAdminPage) {
-      $payment_element_data = $webform_submission->getData()[$element['#webform_key']] ?? NULL;
-      if ($payment_element_data) {
-        $payment_data = json_decode($payment_element_data)->paymentObject ?? NULL;
-        if ($payment_data) {
-          $form['payment_id'] = [
-            '#type' => 'item',
-            '#title' => $this->t('Betalings ID'),
-            '#markup' => $payment_data->payment_id ?? '{Tom}' ?: '{Tom}',
-          ];
-          $form['amount'] = [
-            '#type' => 'item',
-            '#title' => $this->t('Beløb'),
-            '#markup' => $payment_data->amount,
-          ];
-          return $form;
-        } else {
-          return '{Tom}';
-        }
+    if ($payment_element_data) {
+      $payment_data = json_decode($payment_element_data)->paymentObject ?? NULL;
+      if ($payment_data) {
+        $form['payment_id'] = [
+          '#type' => 'item',
+          '#title' => $this->t('Betalings ID'),
+          '#markup' => $payment_data->payment_id ?? '{Tom}' ?: '{Tom}',
+        ];
+        $form['amount'] = [
+          '#type' => 'item',
+          '#title' => $this->t('Beløb'),
+          '#markup' => $payment_data->amount,
+        ];
+        return $form;
       }
       else {
         return '{Tom}';
       }
     }
     else {
-      return '[Betalingsinfo]';
+      return '{Tom}';
     }
 
   }

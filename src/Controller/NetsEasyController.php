@@ -134,6 +134,9 @@ class NetsEasyController extends ControllerBase {
       ]
     );
     $result = json_decode($response->getBody()->getContents());
+    if (!$result) {
+      return FALSE;
+    }
     $reservedAmount = $result->payment->summary->reservedAmount ?? NULL;
     $chargedAmount = $result->payment->summary->chargedAmount ?? NULL;
 
