@@ -223,7 +223,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
         $form['payment_id'] = [
           '#type' => 'item',
           '#title' => $this->t('Payment ID'),
-          '#markup' => $paymentData->payment_id ?? '👻' ?: '👻',
+          '#markup' => $paymentData->payment_id ?? '👻',
         ];
         $form['amount'] = [
           '#type' => 'item',
@@ -233,7 +233,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
         $form['posting'] = [
           '#type' => 'item',
           '#title' => $this->t('Posting'),
-          '#markup' => $paymentData->posting ?? $this->t('undefined') ?: $this->t('undefined'),
+          '#markup' => $paymentData->posting ?? $this->t('undefined'),
         ];
         return $form;
       }
