@@ -111,23 +111,23 @@ class NetsEasyPaymentElement extends WebformElementBase {
    *   Form element object.
    * @param array<mixed> $form
    *   Form object.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * @param \Drupal\Core\Form\FormStateInterface $formState
    *   Form state object.
    *
    * @return void
    *   Return
    */
-  public function alterForm(array &$element, array &$form, FormStateInterface $form_state): void {
+  public function alterForm(array &$element, array &$form, FormStateInterface $formState): void {
     $form['#attached']['library'][] = 'os2forms_payment/os2forms_payment';
     $form['#attached']['library'][] = $this->paymentHelper->getTestMode()
       ? 'os2forms_payment/nets_easy_test'
       : 'os2forms_payment/nets_easy_prod';
-    $callback_url = Url::fromRoute('<current>')->setAbsolute()->toString(TRUE)->getGeneratedUrl();
-    $webform_current_page = $form['progress']['#current_page'];
+    $callbackUrl = Url::fromRoute('<current>')->setAbsolute()->toString(TRUE)->getGeneratedUrl();
+    $webformCurrentPage = $form['progress']['#current_page'];
     // Check if we are on the preview page.
-    if ($webform_current_page === "webform_preview") {
+    if ($webformCurrentPage === "webform_preview") {
 
-      $amount_to_pay = $this->paymentHelper->getAmountToPay($form_state->getUserInput(), $this->getElementProperty($element, 'amount_to_pay'));
+      $amountToPay = $this->paymentHelper->getAmountToPay($formState->getUserInput(), $this->getElementProperty($element, 'amount_to_pay'));
       /*
        * If amount to pay is present,
        * inject placeholder for nets gateway containing amount to pay.
@@ -136,9 +136,9 @@ class NetsEasyPaymentElement extends WebformElementBase {
         $form['os2forms_payment_content']['#markup'] = $element['#checkout_page_description'];
       }
 
-      $paymentMethods = array_filter($element['#payment_methods']) ?? [];
+      $paymentMethods = array_filter($element['#payment_methods'] ?? []);
 
-      $paymentPosting = $element['#payment_posting'] ?? 'unset';
+      $paymentPosting = $element['#payment_posting'] ?? 'undefined';
 
       $form['os2forms_payment_checkout_container'] = [
         '#type' => 'container',
@@ -148,8 +148,8 @@ class NetsEasyPaymentElement extends WebformElementBase {
           'data-payment-error-message' => $this->t('An error has occurred. Please try again later.'),
           'data-create-payment-url' => Url::fromRoute("os2forms_payment.createPayment",
             [
-              'amountToPay' => $amount_to_pay,
-              'callbackUrl' => $callback_url,
+              'amountToPay' => $amountToPay,
+              'callbackUrl' => $callbackUrl,
               'paymentMethods' => $paymentMethods,
               'paymentPosting' => $paymentPosting,
             ])->toString(TRUE)->getGeneratedUrl(),
@@ -169,19 +169,19 @@ class NetsEasyPaymentElement extends WebformElementBase {
    *
    * @param array<mixed> $element
    *   Form element object.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * @param \Drupal\Core\Form\FormStateInterface $formState
    *   Form state object.
    *
    * @return mixed
    *   Returns validation results.
    */
-  public static function validatePayment(array &$element, FormStateInterface $form_state): mixed {
+  public static function validatePayment(array &$element, FormStateInterface $formState): mixed {
     $paymentHelper = \Drupal::service('Drupal\os2forms_payment\Helper\PaymentHelper');
     $paymentElementClass = get_called_class();
 
-    $paymentId = $form_state->getValue($paymentElementClass::PAYMENT_REFERENCE_NAME);
+    $paymentId = $formState->getValue($paymentElementClass::PAYMENT_REFERENCE_NAME);
     if (!$paymentId) {
-      return $form_state->setError(
+      return $formState->setError(
         $element,
         t('The form could not be submitted. Please try again.')
       );
@@ -192,7 +192,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
     $paymentValidated = $paymentHelper->validatePayment($endpoint);
 
     if (!$paymentValidated) {
-      return $form_state->setError(
+      return $formState->setError(
         $element,
         t('The payment could not be validated. Please try again.')
       );
@@ -206,7 +206,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
    *
    * @param array<mixed> $element
    *   Form element object.
-   * @param \Drupal\webform\WebformSubmissionInterface $webform_submission
+   * @param \Drupal\webform\WebformSubmissionInterface $webformSubmission
    *   Form submission object.
    * @param array<mixed> $options
    *   Result view details.
@@ -214,26 +214,26 @@ class NetsEasyPaymentElement extends WebformElementBase {
    * @return mixed
    *   Returns content for the results view.
    */
-  protected function formatHtmlItem(array $element, WebformSubmissionInterface $webform_submission, array $options = []): mixed {
-    $payment_element_data = $webform_submission->getData()[$element['#webform_key']] ?? NULL;
+  protected function formatHtmlItem(array $element, WebformSubmissionInterface $webformSubmission, array $options = []): mixed {
+    $paymentElementData = $webformSubmission->getData()[$element['#webform_key']] ?? NULL;
 
-    if ($payment_element_data) {
-      $payment_data = json_decode($payment_element_data)->paymentObject ?? NULL;
-      if ($payment_data) {
+    if ($paymentElementData) {
+      $paymentData = json_decode($paymentElementData)->paymentObject ?? NULL;
+      if ($paymentData) {
         $form['payment_id'] = [
           '#type' => 'item',
           '#title' => $this->t('Payment ID'),
-          '#markup' => $payment_data->payment_id ?? '👻' ?: '👻',
+          '#markup' => $paymentData->payment_id ?? '👻' ?: '👻',
         ];
         $form['amount'] = [
           '#type' => 'item',
           '#title' => $this->t('Amount'),
-          '#markup' => $payment_data->amount,
+          '#markup' => $paymentData->amount,
         ];
         $form['posting'] = [
           '#type' => 'item',
           '#title' => $this->t('Posting'),
-          '#markup' => $payment_data->posting ?? $this->t('undefined') ?: $this->t('undefined'),
+          '#markup' => $paymentData->posting ?? $this->t('undefined') ?: $this->t('undefined'),
         ];
         return $form;
       }

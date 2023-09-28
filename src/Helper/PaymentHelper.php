@@ -29,43 +29,43 @@ class PaymentHelper {
    *   Return
    */
   public function webformSubmissionPresave(WebFormSubmissionInterface $submission) {
-    $webform_elements = $submission->getWebform()->getElementsDecodedAndFlattened();
-    $payment_element = NULL;
-    $payment_element_machine_name = NULL;
+    $webformElements = $submission->getWebform()->getElementsDecodedAndFlattened();
+    $paymentElement = NULL;
+    $paymentElementMachineName = NULL;
 
-    foreach ($webform_elements as $key => $webform_element) {
-      if ('os2forms_payment' === ($webform_element['#type'] ?? NULL)) {
-        $payment_element = $webform_element;
-        $payment_element_machine_name = $key;
+    foreach ($webformElements as $key => $webformElement) {
+      if ('os2forms_payment' === ($webformElement['#type'] ?? NULL)) {
+        $paymentElement = $webformElement;
+        $paymentElementMachineName = $key;
         break;
       }
     }
-    if (NULL === $payment_element) {
+    if (NULL === $paymentElement) {
       return;
     }
 
-    $submission_data = $submission->getData();
-    $amount_to_pay = $this->getAmountToPay($submission_data, $payment_element['#amount_to_pay']);
+    $submissionData = $submission->getData();
+    $amountToPay = $this->getAmountToPay($submissionData, $paymentElement['#amount_to_pay']);
     /*
-     * The payment_reference_field is not a part of the form submission,
+     * The paymentReferenceField is not a part of the form submission,
      * so we get it from the POST payload.
      * The goal here is to store the payment_id and amount_to_pay
      * as a JSON object in the os2forms_payment submission value.
      */
     $request = $this->requestStack->getCurrentRequest();
-    $payment_reference_field = $request->request->get('os2forms_payment_reference_field');
-    $paymentPosting = $payment_element['#payment_posting'] ?? 'unset';
+    $paymentReferenceField = $request->request->get('os2forms_payment_reference_field');
+    $paymentPosting = $paymentElement['#payment_posting'] ?? 'undefined';
 
-    if ($request && $amount_to_pay) {
+    if ($request && $amountToPay) {
       $payment_object = [
         'paymentObject' => [
-          'payment_id' => $payment_reference_field,
-          'amount' => $amount_to_pay,
+          'payment_id' => $paymentReferenceField,
+          'amount' => $amountToPay,
           'posting' => $paymentPosting,
         ],
       ];
 
-      $submission_data[$payment_element_machine_name] = json_encode($payment_object);
+      $submission_data[$paymentElementMachineName] = json_encode($payment_object);
       $submission->setData($submission_data);
     }
   }
@@ -82,13 +82,13 @@ class PaymentHelper {
    *   Returns the total amount the user has to pay.
    */
   public function getAmountToPay(array $values, string $key): float {
-    $amount_to_pay = $values[$key] ?? NULL;
+    $amountToPay = $values[$key] ?? NULL;
 
-    if (is_array($amount_to_pay)) {
-      $amount_to_pay = array_sum(array_values(array_filter($amount_to_pay)));
+    if (is_array($amountToPay)) {
+      $amountToPay = array_sum(array_values(array_filter($amountToPay)));
     }
 
-    return (float) $amount_to_pay;
+    return (float) $amountToPay;
   }
 
   /**
