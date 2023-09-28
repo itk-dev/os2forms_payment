@@ -5,6 +5,7 @@ namespace Drupal\os2forms_payment\Helper;
 use Drupal\Core\Http\RequestStack;
 use Drupal\Core\Site\Settings;
 use Drupal\webform\WebformSubmissionInterface;
+use GuzzleHttp\ClientInterface;
 
 /**
  * Payment helper class.
@@ -16,6 +17,7 @@ class PaymentHelper {
    */
   public function __construct(
     private readonly RequestStack $requestStack,
+    private readonly ClientInterface $httpClient,
   ) {
   }
 
@@ -87,6 +89,82 @@ class PaymentHelper {
   }
 
   /**
+   * Validates a given payment via the Nets Payment API.
+   *
+   * @param string $endpoint
+   *   Nets Payment API endpoint.
+   *
+   * @return bool
+   *   Returns validation results.
+   */
+  public function validatePayment($endpoint): bool {
+    $response = $this->httpClient->request(
+      'GET',
+      $endpoint,
+      [
+        'headers' => [
+          'Content-Type' => 'application/json',
+          'Accept' => 'application/json',
+          'Authorization' => $this->getSecretKey(),
+        ],
+      ]
+    );
+    $result = json_decode($response->getBody()->getContents());
+    if (empty($result)) {
+      return FALSE;
+    }
+    $reservedAmount = $result->payment->summary->reservedAmount ?? NULL;
+    $chargedAmount = $result->payment->summary->chargedAmount ?? NULL;
+
+    if ($reservedAmount && !$chargedAmount) {
+      // Payment is reserved, but not yet charged.
+      $paymentCharged = $this->chargePayment($endpoint, $reservedAmount);
+      return $paymentCharged;
+    }
+
+    if (!$reservedAmount && !$chargedAmount) {
+      // Reservation was not made.
+      return FALSE;
+    }
+
+    return $reservedAmount === $chargedAmount;
+  }
+
+  /**
+   * Charges a given payment via the Nets Payment API.
+   *
+   * @param string $endpoint
+   *   Nets Payment API endpoint.
+   * @param string $reservedAmount
+   *   The reserved amount to be charged.
+   *
+   * @return bool
+   *   Returns whether the payment was charged.
+   */
+  private function chargePayment($endpoint, $reservedAmount) {
+    $endpoint = $endpoint . '/charges';
+
+    $response = $this->httpClient->request(
+      'POST',
+      $endpoint,
+      [
+        'headers' => [
+          'Content-Type' => 'application/json',
+          'Accept' => 'application/json',
+          'Authorization' => $this->getSecretKey(),
+        ],
+        'json' => [
+          'amount' => $reservedAmount,
+        ],
+
+      ]
+    );
+
+    $result = json_decode($response->getBody()->getContents());
+    return (bool) $result->chargeId;
+  }
+
+  /**
    * Returns the settings for the os2forms_payment module.
    *
    * @return array<mixed>
@@ -135,4 +213,17 @@ class PaymentHelper {
   public function getTestMode(): bool {
     return $this->getPaymentSettings()['test_mode'] ?? TRUE;
   }
+
+  /**
+   * Returns the Nets API payment endpoint.
+   *
+   * @return string
+   *   The endpoint URL.
+   */
+  public function getPaymentEndpoint(): string {
+    return $this->getTestMode()
+    ? 'https://test.api.dibspayment.eu/v1/payments/'
+    : 'https://api.dibspayment.eu/v1/payments/';
+  }
+
 }
