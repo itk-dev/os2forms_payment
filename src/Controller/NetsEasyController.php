@@ -56,7 +56,8 @@ class NetsEasyController extends ControllerBase {
     $callbackUrl = $request->get('callbackUrl');
     $paymentPosting = $request->get('paymentPosting');
     $paymentMethods = $request->get('paymentMethods');
-    $paymentMethodsConfiguration = array_map(static fn ($name) => ['name' => $name, 'enabled' => TRUE],
+    $paymentMethodsConfiguration = array_map(
+      static fn ($name) => ['name' => $name, 'enabled' => TRUE],
       $paymentMethods
     );
 
