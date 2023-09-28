@@ -56,18 +56,12 @@ class NetsEasyController extends ControllerBase {
     $callbackUrl = $request->get('callbackUrl');
     $paymentPosting = $request->get('paymentPosting');
     $paymentMethods = $request->get('paymentMethods');
-    $paymentMethodsDecoded = NULL;
-    if ($paymentMethods) {
-      parse_str($paymentMethods, $paymentMethodsDecoded);
-    }
     $paymentMethodsFormatted = [];
-    if ($paymentMethodsDecoded) {
-      foreach ($paymentMethodsDecoded as $paymentMethod) {
-        $paymentMethodsFormatted[] = [
-          'name' => $paymentMethod,
-          'enabled' => TRUE,
-        ];
-      }
+    foreach ($paymentMethods as $paymentMethod) {
+      $paymentMethodsFormatted[] = [
+        'name' => $paymentMethod,
+        'enabled' => TRUE,
+      ];
     }
 
     if (!$callbackUrl || $amountToPay <= 0) {

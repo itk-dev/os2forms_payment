@@ -114,9 +114,6 @@ class PaymentHelper {
     );
     $result = $this->responseToObject($response);
 
-    if (!$result->count()) {
-      return FALSE;
-    }
     $reservedAmount = $result->payment->summary->reservedAmount ?? NULL;
     $chargedAmount = $result->payment->summary->chargedAmount ?? NULL;
 

@@ -136,10 +136,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
         $form['os2forms_payment_content']['#markup'] = $element['#checkout_page_description'];
       }
 
-      $paymentMethods = [];
-      if (!empty($element['#payment_methods'])) {
-        $paymentMethods = http_build_query(array_filter(array_values($element['#payment_methods'])));
-      }
+      $paymentMethods = array_filter($element['#payment_methods']) ?? [];
 
       $paymentPosting = $element['#payment_posting'] ?? 'unset';
 
