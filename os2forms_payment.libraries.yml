@@ -1,0 +1,10 @@
+os2forms_payment:
+  version: 1.x
+  js:
+    assets/os2forms_payment.js: {}
+nets_easy_test:
+  js:
+    https://test.checkout.dibspayment.eu/v1/checkout.js?v=1: {}
+nets_easy_prod:
+  js:
+    https://checkout.dibspayment.eu/v1/checkout.js?v=1: {}

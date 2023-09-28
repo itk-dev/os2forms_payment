@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * @file
+ * Module file for the os2forms payment module.
+ */
+
+use Drupal\os2forms_payment\Helper\PaymentHelper;
+
+/**
+ * Webform submission presave hook.
+ *
+ * @return void
+ *   Return
+ */
+function os2forms_payment_webform_submission_presave(mixed $submission): void {
+  Drupal::service(PaymentHelper::class)->webformSubmissionPresave($submission);
+}
