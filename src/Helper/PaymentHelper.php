@@ -6,6 +6,7 @@ use Drupal\Core\Http\RequestStack;
 use Drupal\Core\Site\Settings;
 use Drupal\webform\WebformSubmissionInterface;
 use GuzzleHttp\ClientInterface;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Payment helper class.
@@ -53,7 +54,7 @@ class PaymentHelper {
      */
     $request = $this->requestStack->getCurrentRequest();
     $payment_reference_field = $request->request->get('os2forms_payment_reference_field');
-    $paymentPosting = $payment_element['#payment_posting'] ?? t('unset');
+    $paymentPosting = $payment_element['#payment_posting'] ?? 'unset';
 
     if ($request && $amount_to_pay) {
       $payment_object = [
@@ -235,7 +236,7 @@ class PaymentHelper {
    * @return object
    *   The response object.
    */
-  public function responseToObject(\Psr\Http\Message\ResponseInterface $response): object {
+  public function responseToObject(ResponseInterface $response): object {
     return json_decode($response->getBody()->getContents());
   }
 
