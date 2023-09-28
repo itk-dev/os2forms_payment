@@ -54,17 +54,20 @@ class NetsEasyController extends ControllerBase {
     // Amount to pay is defined in the lowest monetary unit.
     $amountToPay *= 100;
     $callbackUrl = $request->get('callbackUrl');
+    $paymentPosting = $request->get('paymentPosting');
     $paymentMethods = $request->get('paymentMethods');
     $paymentMethodsDecoded = NULL;
     if ($paymentMethods) {
       parse_str($paymentMethods, $paymentMethodsDecoded);
     }
     $paymentMethodsFormatted = [];
-    foreach ($paymentMethodsDecoded as $paymentMethod) {
-      $paymentMethodsFormatted[] = [
-        'name' => $paymentMethod,
-        'enabled' => TRUE,
-      ];
+    if ($paymentMethodsDecoded) {
+      foreach ($paymentMethodsDecoded as $paymentMethod) {
+        $paymentMethodsFormatted[] = [
+          'name' => $paymentMethod,
+          'enabled' => TRUE,
+        ];
+      }
     }
 
     if (!$callbackUrl || $amountToPay <= 0) {
@@ -92,8 +95,9 @@ class NetsEasyController extends ControllerBase {
         ],
         'amount' => $amountToPay,
         'currency' => 'DKK',
-        'reference' => 'reference',
+        'reference' => $paymentPosting,
       ],
+      'paymentPosting' => $paymentPosting,
     ]);
 
     $response = $this->httpClient->request(

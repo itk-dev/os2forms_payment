@@ -51,6 +51,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
       'amount_to_pay' => '',
       'checkout_page_description' => '',
       'payment_methods' => ['Card'],
+      'payment_posting' => '',
     ] + parent::defineDefaultProperties();
   }
 
@@ -83,6 +84,12 @@ class NetsEasyPaymentElement extends WebformElementBase {
         ->t('Content to display on checkout page'),
       '#description' => $this
         ->t('This field supports simple html'),
+    ];
+
+    $form['element']['payment_posting'] = [
+      '#type' => 'textfield',
+      '#title' => $this
+        ->t('Internal reference for where the payment belongs'),
     ];
 
     $form['element']['payment_methods'] = [
@@ -134,6 +141,8 @@ class NetsEasyPaymentElement extends WebformElementBase {
         $paymentMethods = http_build_query(array_filter(array_values($element['#payment_methods'])));
       }
 
+      $paymentPosting = $element['#payment_posting'] ?? 'unset';
+
       $form['os2forms_payment_checkout_container'] = [
         '#type' => 'container',
         '#attributes' => [
@@ -145,6 +154,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
               'amountToPay' => $amount_to_pay,
               'callbackUrl' => $callback_url,
               'paymentMethods' => $paymentMethods,
+              'paymentPosting' => $paymentPosting,
             ])->toString(TRUE)->getGeneratedUrl(),
         ],
         '#limit_validation_errors' => [],
@@ -222,6 +232,11 @@ class NetsEasyPaymentElement extends WebformElementBase {
           '#type' => 'item',
           '#title' => $this->t('Amount'),
           '#markup' => $payment_data->amount,
+        ];
+        $form['posting'] = [
+          '#type' => 'item',
+          '#title' => $this->t('Posting'),
+          '#markup' => $payment_data->posting ?? $this->t('undefined') ?: $this->t('undefined'),
         ];
         return $form;
       }

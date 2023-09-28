@@ -52,13 +52,15 @@ class PaymentHelper {
      * as a JSON object in the os2forms_payment submission value.
      */
     $request = $this->requestStack->getCurrentRequest();
-    $payment_reference_field = $request->request->get('payment_reference_field');
+    $payment_reference_field = $request->request->get('os2forms_payment_reference_field');
+    $paymentPosting = $payment_element['#payment_posting'] ?? t('unset');
 
     if ($request && $amount_to_pay) {
       $payment_object = [
         'paymentObject' => [
           'payment_id' => $payment_reference_field,
           'amount' => $amount_to_pay,
+          'posting' => $paymentPosting,
         ],
       ];
 
@@ -109,8 +111,9 @@ class PaymentHelper {
         ],
       ]
     );
-    $result = json_decode($response->getBody()->getContents());
-    if (empty($result)) {
+    $result = $this->responseToObject($response);
+
+    if (!$result->count()) {
       return FALSE;
     }
     $reservedAmount = $result->payment->summary->reservedAmount ?? NULL;
@@ -160,7 +163,7 @@ class PaymentHelper {
       ]
     );
 
-    $result = json_decode($response->getBody()->getContents());
+    $result = $this->responseToObject($response);
     return (bool) $result->chargeId;
   }
 
@@ -224,6 +227,16 @@ class PaymentHelper {
     return $this->getTestMode()
     ? 'https://test.api.dibspayment.eu/v1/payments/'
     : 'https://api.dibspayment.eu/v1/payments/';
+  }
+
+  /**
+   * Converts a JSON response to an object.
+   *
+   * @return object
+   *   The response object.
+   */
+  public function responseToObject(\Psr\Http\Message\ResponseInterface $response): object {
+    return json_decode($response->getBody()->getContents());
   }
 
 }
