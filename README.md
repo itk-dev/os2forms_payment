@@ -7,25 +7,33 @@ composer require os2forms/payment
 drush pm:enable os2forms_payment
 ```
 
-Settings.php / Settings.local.php
+Define settings in `settings.local.php`:
 
 ```sh
-$settings['os2forms_payment']['checkout_key'] = 'CHECKOUT_KEY, both test and production, can be retrieved from Nets admin panel';
-$settings['os2forms_payment']['secret_key'] = 'SECRET_KEY, both test and production, can be retrieved from Nets admin panel';
-$settings['os2forms_payment']['terms_url'] = 'Static page containing terms and conditions';
-$settings['os2forms_payment']['test_mode'] = 'Boolean describing whether the module is operated in test mode';
+// CHECKOUT_KEY, both test and production, can be retrieved from Nets admin panel
+$settings['os2forms_payment']['checkout_key'] = '';
+
+// SECRET_KEY, both test and production, can be retrieved from Nets admin panel
+$settings['os2forms_payment']['secret_key'] = '';
+
+// Static page containing terms and conditions, e.g. /node/87
+$settings['os2forms_payment']['terms_url'] = '';
+
+// Boolean describing whether the module is operated in test mode
+$settings['os2forms_payment']['test_mode'] = TRUE;
 ```
 
 ## Setup
 
-Ensure that the values described above is set in your Settings.php\
-\
-Create a new webform\
-Goto Indstillinger -> Formular -> Form preview settings -> Enable preview page (Obligatorisk)\
-Insert the payment module in the webform.\
-Go to the payment element settings and select the element containing the\
-amount to pay (field types: Skjult, Vælg).\
-Test if the Nets gateway appears on the Review page.
+Make sure that the setting values described above are set.
+
+1. Create a new webform
+2. Goto Indstillinger -> Formular ->
+ Form preview settings -> Enable preview page (Obligatorisk)
+3. Add a payent element on the form
+4. Go to the payment element settings and select the element containing the
+amount to pay (field types: Skjult, Vælg).
+5. Test the form. The Nets gateway should appear on the Review page.
 
 ## Coding standards
 

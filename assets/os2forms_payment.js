@@ -27,7 +27,7 @@ function initPaymentWindow(checkoutContainer, retried = false) {
       const paymentIdCompleted = payload.paymentId;
       if (paymentId === paymentIdCompleted) {
         document.querySelector(
-          "input[name='payment_reference_field']"
+          "input[name='os2forms_payment_reference_field']"
         ).value = paymentIdCompleted;
         document.getElementById("edit-submit").click();
       } else {

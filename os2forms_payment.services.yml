@@ -1,5 +1,10 @@
 services:
   Drupal\os2forms_payment\Helper\PaymentHelper:
-    arguments: ['@request_stack', '@http_client']
+    arguments:
+      - '@request_stack'
+      - '@http_client'
+
   Drupal\os2forms_payment\Controller\NetsEasyController:
-    arguments: ['@Drupal\os2forms_payment\Helper\PaymentHelper', '@http_client']
+    arguments:
+      - '@Drupal\os2forms_payment\Helper\PaymentHelper'
+      - '@http_client'
