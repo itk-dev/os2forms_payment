@@ -54,29 +54,30 @@ class NetsEasyController extends ControllerBase {
     // Amount to pay is defined in the lowest monetary unit.
     $amountToPay *= 100;
     $callbackUrl = $request->get('callbackUrl');
+    $paymentMethods = $request->get('paymentMethods');
+    $paymentMethodsDecoded = NULL;
+    if ($paymentMethods) {
+      parse_str($paymentMethods, $paymentMethodsDecoded);
+    }
+    $paymentMethodsFormatted = [];
+    foreach ($paymentMethodsDecoded as $paymentMethod) {
+      $paymentMethodsFormatted[] = [
+        'name' => $paymentMethod,
+        'enabled' => TRUE,
+      ];
+    }
 
     if (!$callbackUrl || $amountToPay <= 0) {
       return new Response(json_encode(['error' => $this->t('An error has occurred. Please try again later.')]));
     }
-    $endpoint = $this->paymentHelper->getTestMode()
-      ? 'https://test.api.dibspayment.eu/v1/payments'
-      : 'https://api.dibspayment.eu/v1/payments';
+    $endpoint = $this->paymentHelper->getPaymentEndpoint();
     $payload = json_encode([
       'checkout' => [
         'integrationType' => 'EmbeddedCheckout',
         'url' => $callbackUrl,
         'termsUrl' => $this->paymentHelper->getTermsUrl(),
       ],
-      'paymentMethodsConfiguration' => [
-        [
-          'name' => 'Card',
-          'enabled' => TRUE,
-        ],
-        [
-          'name' => 'MobilePay',
-          'enabled' => TRUE,
-        ],
-      ],
+      'paymentMethodsConfiguration' => $paymentMethodsFormatted,
       'order' => [
         'items' => [
           [
@@ -110,82 +111,6 @@ class NetsEasyController extends ControllerBase {
     $result = $response->getBody()->getContents();
 
     return new Response($result);
-  }
-
-  /**
-   * Validates a given payment via the Nets Payment API.
-   *
-   * @param string $endpoint
-   *   Nets Payment API endpoint.
-   *
-   * @return bool
-   *   Returns validation results.
-   */
-  public function validatePayment($endpoint): bool {
-    $response = $this->httpClient->request(
-      'GET',
-      $endpoint,
-      [
-        'headers' => [
-          'Content-Type' => 'application/json',
-          'Accept' => 'application/json',
-          'Authorization' => $this->paymentHelper->getSecretKey(),
-        ],
-      ]
-    );
-    $result = json_decode($response->getBody()->getContents());
-    if (!$result) {
-      return FALSE;
-    }
-    $reservedAmount = $result->payment->summary->reservedAmount ?? NULL;
-    $chargedAmount = $result->payment->summary->chargedAmount ?? NULL;
-
-    if ($reservedAmount && !$chargedAmount) {
-      // Payment is reserved, but not yet charged.
-      $paymentCharged = $this->chargePayment($endpoint, $reservedAmount);
-      return $paymentCharged;
-    }
-
-    if (!$reservedAmount && !$chargedAmount) {
-      // Reservation was not made.
-      return FALSE;
-    }
-
-    return $reservedAmount === $chargedAmount;
-  }
-
-  /**
-   * Charges a given payment via the Nets Payment API.
-   *
-   * @param string $endpoint
-   *   Nets Payment API endpoint.
-   * @param string $reservedAmount
-   *   The reserved amount to be charged.
-   *
-   * @return bool
-   *   Returns whether the payment was charged.
-   */
-  private function chargePayment($endpoint, $reservedAmount) {
-    $endpoint = $endpoint . '/charges';
-
-    $response = $this->httpClient->request(
-      'POST',
-      $endpoint,
-      [
-        'headers' => [
-          'Content-Type' => 'application/json',
-          'Accept' => 'application/json',
-          'Authorization' => $this->paymentHelper->getSecretKey(),
-        ],
-        'json' => [
-          'amount' => $reservedAmount,
-        ],
-
-      ]
-    );
-
-    $result = json_decode($response->getBody()->getContents());
-    return (bool) $result->chargeId;
   }
 
 }

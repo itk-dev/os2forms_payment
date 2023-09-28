@@ -14,7 +14,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @WebformElement(
  *   id = "os2forms_payment",
- *   label = @Translation("OS2forms betalingsmodul"),
+ *   label = @Translation("OS2forms payment element"),
  *   description = @Translation("Provides a os2forms_payment element."),
  *   category = @Translation("Payment"),
  * )
@@ -26,6 +26,8 @@ class NetsEasyPaymentElement extends WebformElementBase {
    * @var \Drupal\os2forms_payment\Helper\PaymentHelper
    */
   private PaymentHelper $paymentHelper;
+
+  public const PAYMENT_REFERENCE_NAME = 'os2forms_payment_reference_field';
 
   /**
    * {@inheritdoc}
@@ -87,11 +89,10 @@ class NetsEasyPaymentElement extends WebformElementBase {
       '#type' => 'checkboxes',
       '#title' => $this->t('Select available payment methods'),
       '#options' => [
-        'Card' => 'Kortbetaling',
-        'MobilePay' => 'MobilePay',
+        'Card' => $this->t('Kortbetaling'),
+        'MobilePay' => $this->t('MobilePay'),
       ],
     ];
-
 
     return $form;
   }
@@ -114,7 +115,6 @@ class NetsEasyPaymentElement extends WebformElementBase {
     $form['#attached']['library'][] = $this->paymentHelper->getTestMode()
       ? 'os2forms_payment/nets_easy_test'
       : 'os2forms_payment/nets_easy_prod';
-
     $callback_url = Url::fromRoute('<current>')->setAbsolute()->toString(TRUE)->getGeneratedUrl();
     $webform_current_page = $form['progress']['#current_page'];
     // Check if we are on the preview page.
@@ -148,11 +148,11 @@ class NetsEasyPaymentElement extends WebformElementBase {
             ])->toString(TRUE)->getGeneratedUrl(),
         ],
         '#limit_validation_errors' => [],
-        '#element_validate' => [[get_class($this), 'validateOptions']],
+        '#element_validate' => [[get_class($this), 'validatePayment']],
       ];
-      $form['os2forms_payment_payment_reference_field'] = [
+      $form['os2forms_payment_reference_field'] = [
         '#type' => 'hidden',
-        '#name' => 'payment_reference_field',
+        '#name' => $this::PAYMENT_REFERENCE_NAME,
       ];
     }
   }
@@ -168,11 +168,11 @@ class NetsEasyPaymentElement extends WebformElementBase {
    * @return mixed
    *   Returns validation results.
    */
-  public static function validateOptions(array &$element, FormStateInterface $form_state): mixed {
+  public static function validatePayment(array &$element, FormStateInterface $form_state): mixed {
     $paymentHelper = \Drupal::service('Drupal\os2forms_payment\Helper\PaymentHelper');
-    $netsEasyController = \Drupal::service('Drupal\os2forms_payment\Controller\NetsEasyController');
+    $paymentElementClass = get_called_class();
 
-    $paymentId = $form_state->getValue('os2forms_payment_payment_reference_field');
+    $paymentId = $form_state->getValue($paymentElementClass::PAYMENT_REFERENCE_NAME);
     if (!$paymentId) {
       return $form_state->setError(
         $element,
@@ -180,11 +180,9 @@ class NetsEasyPaymentElement extends WebformElementBase {
       );
     }
 
-    $endpoint = $paymentHelper->getTestMode()
-      ? 'https://test.api.dibspayment.eu/v1/payments/' . $paymentId
-      : 'https://api.dibspayment.eu/v1/payments/' . $paymentId;
+    $endpoint = $paymentHelper->getPaymentEndpoint() . $paymentId;
 
-    $paymentValidated = $netsEasyController->validatePayment($endpoint);
+    $paymentValidated = $paymentHelper->validatePayment($endpoint);
 
     if (!$paymentValidated) {
       return $form_state->setError(
@@ -217,22 +215,22 @@ class NetsEasyPaymentElement extends WebformElementBase {
       if ($payment_data) {
         $form['payment_id'] = [
           '#type' => 'item',
-          '#title' => $this->t('Betalings ID'),
-          '#markup' => $payment_data->payment_id ?? '{Tom}' ?: '{Tom}',
+          '#title' => $this->t('Payment ID'),
+          '#markup' => $payment_data->payment_id ?? '👻' ?: '👻',
         ];
         $form['amount'] = [
           '#type' => 'item',
-          '#title' => $this->t('Beløb'),
+          '#title' => $this->t('Amount'),
           '#markup' => $payment_data->amount,
         ];
         return $form;
       }
       else {
-        return '{Tom}';
+        return $this->t('No payment data found');
       }
     }
     else {
-      return '{Tom}';
+      return $this->t('No payment data found');
     }
 
   }
