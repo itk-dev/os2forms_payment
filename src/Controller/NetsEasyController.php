@@ -58,7 +58,7 @@ class NetsEasyController extends ControllerBase {
     $paymentMethods = $request->get('paymentMethods');
     $paymentMethodsConfiguration = array_map(
       static fn ($name) => ['name' => $name, 'enabled' => TRUE],
-      $paymentMethods
+      array_values($paymentMethods)
     );
 
     if (!$callbackUrl || $amountToPay <= 0) {
