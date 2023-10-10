@@ -28,11 +28,15 @@ class NetsEasyPaymentElement extends WebformElementBase {
    */
   private PaymentHelper $paymentHelper;
 
+  /**
+   * Private temp store.
+   *
+   * @var \Drupal\Core\TempStore\PrivateTempStore
+   */
   private PrivateTempStore $tempStore;
 
   const PAYMENT_REFERENCE_NAME = 'os2forms_payment_reference_field';
   const AMOUNT_TO_PAY = 'AMOUNT_TO_PAY';
-
 
   /**
    * {@inheritdoc}

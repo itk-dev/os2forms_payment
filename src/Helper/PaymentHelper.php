@@ -21,7 +21,13 @@ class PaymentHelper {
   const VALIDATION_ERROR_NO_PAYMENT = 'VALIDATION_ERROR_NO_PAYMENT';
   const VALIDATION_ERROR_INVALID_AMOUNT = 'VALIDATION_ERROR_INVALID_AMOUNT';
 
+  /**
+   * Private temp store.
+   *
+   * @var \Drupal\Core\TempStore\PrivateTempStore
+   */
   private readonly PrivateTempStore $privateTempStore;
+
   /**
    * {@inheritDoc}
    */
@@ -105,21 +111,22 @@ class PaymentHelper {
   /**
    * Validates a given payment via the Nets Payment API.
    *
-   * @param string $endpoint
-   *   Nets Payment API endpoint.
+   * @param array<mixed> $element
+   *   Element array.
+   * @param \Drupal\Core\Form\FormStateInterface $formState
+   *   Form state object.
    */
   public function validatePayment(array &$element, FormStateInterface $formState): void {
     // @FIXME: make error messages translateable.
     $paymentId = $formState->getValue(NetsEasyPaymentElement::PAYMENT_REFERENCE_NAME);
 
     if (!$paymentId) {
-        $formState->setError(
+      $formState->setError(
           $element,
           'No payment found.'
         );
-        return;
+      return;
     }
-
 
     $paymentEndpoint = $this->getPaymentEndpoint() . $paymentId;
 
@@ -137,8 +144,8 @@ class PaymentHelper {
     $result = $this->responseToObject($response);
 
     $amountToPay = floatval($this->privateTempStore->get(NetsEasyPaymentElement::AMOUNT_TO_PAY) * 100);
-    $reservedAmount = floatval($result->payment->summary->reservedAmount) ?? NULL;
-    $chargedAmount = floatval($result->payment->summary->chargedAmount) ?? NULL;
+    $reservedAmount = floatval($result->payment->summary->reservedAmount);
+    $chargedAmount = floatval($result->payment->summary->chargedAmount);
 
     if ($amountToPay !== $reservedAmount) {
       // Reserved amount mismatch.
@@ -161,7 +168,7 @@ class PaymentHelper {
       }
 
       $chargeEndpoint = $this->getChargeEndpoint() . $paymentChargeId;
-    $response = $this->httpClient->request(
+      $response = $this->httpClient->request(
       'GET',
       $chargeEndpoint,
       [
@@ -171,22 +178,19 @@ class PaymentHelper {
           'Authorization' => $this->getSecretKey(),
         ],
       ]
-    );
-    $result = $this->responseToObject($response);
-    $chargedAmount = $result->amount;
+      );
+      $result = $this->responseToObject($response);
+      $chargedAmount = $result->amount;
 
-    if (!$reservedAmount && !$chargedAmount) {
-      // Payment amount mismatch.
-      $formState->setError(
+      if (!$reservedAmount && !$chargedAmount) {
+        // Payment amount mismatch.
+        $formState->setError(
         $element,
         'Payment amount mismatch'
-      );
-      return;
+        );
+        return;
+      }
     }
-    }
-
-
-
 
   }
 
@@ -195,11 +199,11 @@ class PaymentHelper {
    *
    * @param string $endpoint
    *   Nets Payment API endpoint.
-   * @param string $reservedAmount
+   * @param float $reservedAmount
    *   The reserved amount to be charged.
    *
-   * @return bool
-   *   Returns whether the payment was charged.
+   * @return string
+   *   Returns charge id.
    */
   private function chargePayment($endpoint, $reservedAmount) {
     $endpoint = $endpoint . '/charges';
@@ -285,7 +289,6 @@ class PaymentHelper {
     ? 'https://test.api.dibspayment.eu/v1/payments/'
     : 'https://api.dibspayment.eu/v1/payments/';
   }
-
 
   /**
    * Returns the Nets API charge endpoint.
