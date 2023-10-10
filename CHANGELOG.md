@@ -12,3 +12,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Added OS2Forms payment module
+
+### Fixed
+
+- Corrected format of payment metods
