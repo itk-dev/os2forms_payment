@@ -2,8 +2,12 @@
 
 namespace Drupal\os2forms_payment\Helper;
 
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Http\RequestStack;
 use Drupal\Core\Site\Settings;
+use Drupal\Core\TempStore\PrivateTempStore;
+use Drupal\Core\TempStore\PrivateTempStoreFactory;
+use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
 use Drupal\webform\WebformSubmissionInterface;
 use GuzzleHttp\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -13,13 +17,20 @@ use Psr\Http\Message\ResponseInterface;
  */
 class PaymentHelper {
 
+
+  const VALIDATION_ERROR_NO_PAYMENT = 'VALIDATION_ERROR_NO_PAYMENT';
+  const VALIDATION_ERROR_INVALID_AMOUNT = 'VALIDATION_ERROR_INVALID_AMOUNT';
+
+  private readonly PrivateTempStore $privateTempStore;
   /**
    * {@inheritDoc}
    */
   public function __construct(
     private readonly RequestStack $requestStack,
     private readonly ClientInterface $httpClient,
+    PrivateTempStoreFactory $tempStore,
   ) {
+    $this->privateTempStore = $tempStore->get('os2forms_payment');
   }
 
   /**
@@ -96,14 +107,25 @@ class PaymentHelper {
    *
    * @param string $endpoint
    *   Nets Payment API endpoint.
-   *
-   * @return bool
-   *   Returns validation results.
    */
-  public function validatePayment($endpoint): bool {
+  public function validatePayment(array &$element, FormStateInterface $formState): void {
+    // @FIXME: make error messages translateable.
+    $paymentId = $formState->getValue(NetsEasyPaymentElement::PAYMENT_REFERENCE_NAME);
+
+    if (!$paymentId) {
+        $formState->setError(
+          $element,
+          'No payment found.'
+        );
+        return;
+    }
+
+
+    $paymentEndpoint = $this->getPaymentEndpoint() . $paymentId;
+
     $response = $this->httpClient->request(
       'GET',
-      $endpoint,
+      $paymentEndpoint,
       [
         'headers' => [
           'Content-Type' => 'application/json',
@@ -114,21 +136,58 @@ class PaymentHelper {
     );
     $result = $this->responseToObject($response);
 
-    $reservedAmount = $result->payment->summary->reservedAmount ?? NULL;
-    $chargedAmount = $result->payment->summary->chargedAmount ?? NULL;
+    $amountToPay = floatval($this->privateTempStore->get(NetsEasyPaymentElement::AMOUNT_TO_PAY) * 100);
+    $reservedAmount = floatval($result->payment->summary->reservedAmount) ?? NULL;
+    $chargedAmount = floatval($result->payment->summary->chargedAmount) ?? NULL;
+
+    if ($amountToPay !== $reservedAmount) {
+      // Reserved amount mismatch.
+      $formState->setError(
+        $element,
+        'Reserved amount mismatch'
+      );
+      return;
+    }
 
     if ($reservedAmount && !$chargedAmount) {
       // Payment is reserved, but not yet charged.
-      $paymentCharged = $this->chargePayment($endpoint, $reservedAmount);
-      return $paymentCharged;
-    }
+      $paymentChargeId = $this->chargePayment($paymentEndpoint, $reservedAmount);
+      if (!$paymentChargeId) {
+        $formState->setError(
+          $element,
+          'Payment was not charged'
+        );
+        return;
+      }
+
+      $chargeEndpoint = $this->getChargeEndpoint() . $paymentChargeId;
+    $response = $this->httpClient->request(
+      'GET',
+      $chargeEndpoint,
+      [
+        'headers' => [
+          'Content-Type' => 'application/json',
+          'Accept' => 'application/json',
+          'Authorization' => $this->getSecretKey(),
+        ],
+      ]
+    );
+    $result = $this->responseToObject($response);
+    $chargedAmount = $result->amount;
 
     if (!$reservedAmount && !$chargedAmount) {
-      // Reservation was not made.
-      return FALSE;
+      // Payment amount mismatch.
+      $formState->setError(
+        $element,
+        'Payment amount mismatch'
+      );
+      return;
+    }
     }
 
-    return $reservedAmount === $chargedAmount;
+
+
+
   }
 
   /**
@@ -162,7 +221,7 @@ class PaymentHelper {
     );
 
     $result = $this->responseToObject($response);
-    return (bool) $result->chargeId;
+    return $result->chargeId;
   }
 
   /**
@@ -225,6 +284,19 @@ class PaymentHelper {
     return $this->getTestMode()
     ? 'https://test.api.dibspayment.eu/v1/payments/'
     : 'https://api.dibspayment.eu/v1/payments/';
+  }
+
+
+  /**
+   * Returns the Nets API charge endpoint.
+   *
+   * @return string
+   *   The endpoint URL.
+   */
+  public function getChargeEndpoint(): string {
+    return $this->getTestMode()
+    ? 'https://test.api.dibspayment.eu/v1/charges/'
+    : 'https://api.dibspayment.eu/v1/charges/';
   }
 
   /**

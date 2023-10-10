@@ -3,6 +3,7 @@
 namespace Drupal\os2forms_payment\Plugin\WebformElement;
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\TempStore\PrivateTempStore;
 use Drupal\Core\Url;
 use Drupal\os2forms_payment\Helper\PaymentHelper;
 use Drupal\webform\Plugin\WebformElementBase;
@@ -27,7 +28,11 @@ class NetsEasyPaymentElement extends WebformElementBase {
    */
   private PaymentHelper $paymentHelper;
 
-  public const PAYMENT_REFERENCE_NAME = 'os2forms_payment_reference_field';
+  private PrivateTempStore $tempStore;
+
+  const PAYMENT_REFERENCE_NAME = 'os2forms_payment_reference_field';
+  const AMOUNT_TO_PAY = 'AMOUNT_TO_PAY';
+
 
   /**
    * {@inheritdoc}
@@ -37,6 +42,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->paymentHelper = $container->get(PaymentHelper::class);
+    $instance->tempStore = $container->get('tempstore.private')->get('os2forms_payment');
     return $instance;
   }
 
@@ -126,8 +132,8 @@ class NetsEasyPaymentElement extends WebformElementBase {
     $webformCurrentPage = $form['progress']['#current_page'];
     // Check if we are on the preview page.
     if ($webformCurrentPage === "webform_preview") {
-
       $amountToPay = $this->paymentHelper->getAmountToPay($formState->getUserInput(), $this->getElementProperty($element, 'amount_to_pay'));
+      $this->tempStore->set(self::AMOUNT_TO_PAY, $amountToPay);
       /*
        * If amount to pay is present,
        * inject placeholder for nets gateway containing amount to pay.
@@ -137,7 +143,6 @@ class NetsEasyPaymentElement extends WebformElementBase {
       }
 
       $paymentMethods = array_values(array_filter($element['#payment_methods'] ?? []));
-
       $paymentPosting = $element['#payment_posting'] ?? 'undefined';
 
       $form['os2forms_payment_checkout_container'] = [
@@ -155,7 +160,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
             ])->toString(TRUE)->getGeneratedUrl(),
         ],
         '#limit_validation_errors' => [],
-        '#element_validate' => [[get_class($this), 'validatePayment']],
+        '#element_validate' => [[$this::class, 'validatePayment']],
       ];
       $form['os2forms_payment_reference_field'] = [
         '#type' => 'hidden',
@@ -176,26 +181,12 @@ class NetsEasyPaymentElement extends WebformElementBase {
    *   Returns validation results.
    */
   public static function validatePayment(array &$element, FormStateInterface $formState): mixed {
-    $paymentHelper = \Drupal::service('Drupal\os2forms_payment\Helper\PaymentHelper');
-    $paymentElementClass = get_called_class();
+    $paymentHelper = \Drupal::service(PaymentHelper::class);
 
-    $paymentId = $formState->getValue($paymentElementClass::PAYMENT_REFERENCE_NAME);
-    if (!$paymentId) {
-      return $formState->setError(
-        $element,
-        t('The form could not be submitted. Please try again.')
-      );
-    }
+    $paymentHelper->validatePayment($element, $formState);
 
-    $endpoint = $paymentHelper->getPaymentEndpoint() . $paymentId;
-
-    $paymentValidated = $paymentHelper->validatePayment($endpoint);
-
-    if (!$paymentValidated) {
-      return $formState->setError(
-        $element,
-        t('The payment could not be validated. Please try again.')
-      );
+    if ($formState->hasAnyErrors()) {
+      return FALSE;
     }
 
     return TRUE;
