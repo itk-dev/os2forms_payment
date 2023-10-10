@@ -56,13 +56,11 @@ class NetsEasyController extends ControllerBase {
     $callbackUrl = $request->get('callbackUrl');
     $paymentPosting = $request->get('paymentPosting');
     $paymentMethods = $request->get('paymentMethods');
-    if ($paymentMethods) {
-      $paymentMethodsConfiguration = array_map(
-        static fn ($name) => ['name' => $name, 'enabled' => TRUE],
-        $paymentMethods
-      );
-    }
 
+    $paymentMethodsConfiguration = array_map(
+      static fn($name) => ['name' => $name, 'enabled' => TRUE],
+      $paymentMethods
+    );
 
     if (!$callbackUrl || $amountToPay <= 0) {
       return new Response(json_encode(['error' => $this->t('An error has occurred. Please try again later.')]));
