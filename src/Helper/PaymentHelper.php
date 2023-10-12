@@ -5,6 +5,7 @@ namespace Drupal\os2forms_payment\Helper;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Http\RequestStack;
 use Drupal\Core\Site\Settings;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\TempStore\PrivateTempStore;
 use Drupal\Core\TempStore\PrivateTempStoreFactory;
 use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
@@ -17,9 +18,7 @@ use Psr\Http\Message\ResponseInterface;
  */
 class PaymentHelper {
 
-
-  const VALIDATION_ERROR_NO_PAYMENT = 'VALIDATION_ERROR_NO_PAYMENT';
-  const VALIDATION_ERROR_INVALID_AMOUNT = 'VALIDATION_ERROR_INVALID_AMOUNT';
+  use StringTranslationTrait;
   const AMOUNT_TO_PAY = 'AMOUNT_TO_PAY';
 
   /**
@@ -62,16 +61,20 @@ class PaymentHelper {
       return;
     }
 
-    $submissionData = $submission->getData();
-    $amountToPay = $this->getAmountToPay($submissionData, $paymentElement['#amount_to_pay']);
     /*
      * The paymentReferenceField is not a part of the form submission,
      * so we get it from the POST payload.
-     * The goal here is to store the payment_id and amount_to_pay
-     * as a JSON object in the os2forms_payment submission value.
      */
     $request = $this->requestStack->getCurrentRequest();
     $paymentReferenceField = $request->request->get('os2forms_payment_reference_field');
+
+    /*
+     * The goal here is to store the payment_id, amount_to_pay and posting
+     * as a JSON object in the os2forms_payment submission value.
+     */
+    $submissionData = $submission->getData();
+    $amountToPay = $this->getAmountToPay($submissionData, $paymentElement['#amount_to_pay']);
+
     $paymentPosting = $paymentElement['#payment_posting'] ?? 'undefined';
 
     if ($request && $amountToPay) {
@@ -124,7 +127,7 @@ class PaymentHelper {
     if (!$paymentId) {
       $formState->setError(
         $element,
-        'No payment found.'
+        $this->t('No payment found.')
       );
       return;
     }
@@ -145,53 +148,65 @@ class PaymentHelper {
     $result = $this->responseToObject($response);
 
     $amountToPay = floatval($this->getAmountToPayTemp() * 100);
-    $reservedAmount = floatval($result->payment->summary->reservedAmount);
-    $chargedAmount = floatval($result->payment->summary->chargedAmount);
+    $reservedAmount = floatval($result->payment->summary->reservedAmount ?? 0);
+    $chargedAmount = floatval($result->payment->summary->chargedAmount ?? 0);
 
     if ($amountToPay !== $reservedAmount) {
       // Reserved amount mismatch.
       $formState->setError(
         $element,
-        'Reserved amount mismatch'
+        $this->t('Reserved amount mismatch')
       );
       return;
     }
 
-    if ($reservedAmount && !$chargedAmount) {
+    if ($reservedAmount > 0 && $chargedAmount == 0) {
       // Payment is reserved, but not yet charged.
       $paymentChargeId = $this->chargePayment($paymentEndpoint, $reservedAmount);
       if (!$paymentChargeId) {
         $formState->setError(
           $element,
-          'Payment was not charged'
+          $this->t('Payment was not charged')
         );
         return;
       }
 
-      $chargeEndpoint = $this->getChargeEndpoint() . $paymentChargeId;
-      $response = $this->httpClient->request(
-        'GET',
-        $chargeEndpoint,
-        [
-          'headers' => [
-            'Accept' => 'application/json',
-            'Authorization' => $this->getSecretKey(),
-          ],
-        ]
-      );
-      $result = $this->responseToObject($response);
-      $chargedAmount = $result->amount;
+      /*
+      Right after charging the amount, the charge is validated via another
+      endpoint. Even though the charge is confirmed previously, due to
+      timing, the charge confirmation endpoint may return a 404 error.
 
-      if (!$reservedAmount && !$chargedAmount) {
-        // Payment amount mismatch.
-        $formState->setError(
-          $element,
-          'Payment amount mismatch'
+      Therefore, it is wrapped in a try/catch to allow it to pass,
+      even when it fails, essentially letting this serve as an optional check.
+       */
+      try {
+        $chargeEndpoint = $this->getChargeEndpoint() . $paymentChargeId;
+        $response = $this->httpClient->request(
+          'GET',
+          $chargeEndpoint,
+          [
+            'headers' => [
+              'Authorization' => $this->getSecretKey(),
+            ],
+          ]
         );
-        return;
+
+        $result = $this->responseToObject($response);
+
+        $chargedAmountValidated = floatval($result->amount);
+
+        if ($reservedAmount !== $chargedAmountValidated) {
+          // Payment amount mismatch.
+          $formState->setError(
+            $element,
+            $this->t('Payment amount mismatch')
+          );
+          return;
+        }
+      }
+      catch (\Exception $e) {
       }
     }
-
   }
 
   /**

@@ -27,8 +27,6 @@ class NetsEasyPaymentElement extends WebformElementBase {
    */
   private PaymentHelper $paymentHelper;
 
-
-
   const PAYMENT_REFERENCE_NAME = 'os2forms_payment_reference_field';
 
   /**
