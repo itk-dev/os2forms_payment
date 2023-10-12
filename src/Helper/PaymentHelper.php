@@ -20,6 +20,7 @@ class PaymentHelper {
 
   const VALIDATION_ERROR_NO_PAYMENT = 'VALIDATION_ERROR_NO_PAYMENT';
   const VALIDATION_ERROR_INVALID_AMOUNT = 'VALIDATION_ERROR_INVALID_AMOUNT';
+  const AMOUNT_TO_PAY = 'AMOUNT_TO_PAY';
 
   /**
    * Private temp store.
@@ -122,9 +123,9 @@ class PaymentHelper {
 
     if (!$paymentId) {
       $formState->setError(
-          $element,
-          'No payment found.'
-        );
+        $element,
+        'No payment found.'
+      );
       return;
     }
 
@@ -143,7 +144,7 @@ class PaymentHelper {
     );
     $result = $this->responseToObject($response);
 
-    $amountToPay = floatval($this->privateTempStore->get(NetsEasyPaymentElement::AMOUNT_TO_PAY) * 100);
+    $amountToPay = floatval($this->getAmountToPayTemp() * 100);
     $reservedAmount = floatval($result->payment->summary->reservedAmount);
     $chargedAmount = floatval($result->payment->summary->chargedAmount);
 
@@ -169,15 +170,14 @@ class PaymentHelper {
 
       $chargeEndpoint = $this->getChargeEndpoint() . $paymentChargeId;
       $response = $this->httpClient->request(
-      'GET',
-      $chargeEndpoint,
-      [
-        'headers' => [
-          'Content-Type' => 'application/json',
-          'Accept' => 'application/json',
-          'Authorization' => $this->getSecretKey(),
-        ],
-      ]
+        'GET',
+        $chargeEndpoint,
+        [
+          'headers' => [
+            'Accept' => 'application/json',
+            'Authorization' => $this->getSecretKey(),
+          ],
+        ]
       );
       $result = $this->responseToObject($response);
       $chargedAmount = $result->amount;
@@ -185,8 +185,8 @@ class PaymentHelper {
       if (!$reservedAmount && !$chargedAmount) {
         // Payment amount mismatch.
         $formState->setError(
-        $element,
-        'Payment amount mismatch'
+          $element,
+          'Payment amount mismatch'
         );
         return;
       }
@@ -286,8 +286,8 @@ class PaymentHelper {
    */
   public function getPaymentEndpoint(): string {
     return $this->getTestMode()
-    ? 'https://test.api.dibspayment.eu/v1/payments/'
-    : 'https://api.dibspayment.eu/v1/payments/';
+      ? 'https://test.api.dibspayment.eu/v1/payments/'
+      : 'https://api.dibspayment.eu/v1/payments/';
   }
 
   /**
@@ -298,8 +298,8 @@ class PaymentHelper {
    */
   public function getChargeEndpoint(): string {
     return $this->getTestMode()
-    ? 'https://test.api.dibspayment.eu/v1/charges/'
-    : 'https://api.dibspayment.eu/v1/charges/';
+      ? 'https://test.api.dibspayment.eu/v1/charges/'
+      : 'https://api.dibspayment.eu/v1/charges/';
   }
 
   /**
@@ -310,6 +310,29 @@ class PaymentHelper {
    */
   public function responseToObject(ResponseInterface $response): object {
     return json_decode($response->getBody()->getContents());
+  }
+
+  /**
+   * Sets the amount to pay in private tempoary storage.
+   *
+   * @param float $amountToPay
+   *   The amount to pay.
+   *
+   * @return void
+   *   Sets the tempoary storage.
+   */
+  public function setAmountToPayTemp(float $amountToPay): void {
+    $this->privateTempStore->set(self::AMOUNT_TO_PAY, $amountToPay);
+  }
+
+  /**
+   * Gets the amount to pay in private tempoary storage.
+   *
+   * @return float
+   *   The amount to pay.
+   */
+  public function getAmountToPayTemp(): float {
+    return $this->privateTempStore->get(self::AMOUNT_TO_PAY);
   }
 
 }

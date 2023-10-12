@@ -3,7 +3,6 @@
 namespace Drupal\os2forms_payment\Plugin\WebformElement;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\TempStore\PrivateTempStore;
 use Drupal\Core\Url;
 use Drupal\os2forms_payment\Helper\PaymentHelper;
 use Drupal\webform\Plugin\WebformElementBase;
@@ -28,15 +27,9 @@ class NetsEasyPaymentElement extends WebformElementBase {
    */
   private PaymentHelper $paymentHelper;
 
-  /**
-   * Private temp store.
-   *
-   * @var \Drupal\Core\TempStore\PrivateTempStore
-   */
-  private PrivateTempStore $tempStore;
+
 
   const PAYMENT_REFERENCE_NAME = 'os2forms_payment_reference_field';
-  const AMOUNT_TO_PAY = 'AMOUNT_TO_PAY';
 
   /**
    * {@inheritdoc}
@@ -46,7 +39,6 @@ class NetsEasyPaymentElement extends WebformElementBase {
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->paymentHelper = $container->get(PaymentHelper::class);
-    $instance->tempStore = $container->get('tempstore.private')->get('os2forms_payment');
     return $instance;
   }
 
@@ -137,7 +129,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
     // Check if we are on the preview page.
     if ($webformCurrentPage === "webform_preview") {
       $amountToPay = $this->paymentHelper->getAmountToPay($formState->getUserInput(), $this->getElementProperty($element, 'amount_to_pay'));
-      $this->tempStore->set(self::AMOUNT_TO_PAY, $amountToPay);
+      $this->paymentHelper->setAmountToPayTemp($amountToPay);
       /*
        * If amount to pay is present,
        * inject placeholder for nets gateway containing amount to pay.
@@ -188,10 +180,6 @@ class NetsEasyPaymentElement extends WebformElementBase {
     $paymentHelper = \Drupal::service(PaymentHelper::class);
 
     $paymentHelper->validatePayment($element, $formState);
-
-    if ($formState->hasAnyErrors()) {
-      return FALSE;
-    }
 
     return TRUE;
   }
