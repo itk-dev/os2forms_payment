@@ -172,12 +172,12 @@ class PaymentHelper {
       }
 
       /*
-      Right after charging the amount, the charge is validated via another
-      endpoint. Even though the charge is confirmed previously, due to
-      timing, the charge confirmation endpoint may return a 404 error.
+        Right after charging the amount, the charge is validated via another
+        endpoint. Even though the charge is confirmed previously, due to
+        timing, the charge confirmation endpoint may return a 404 error.
 
-      Therefore, it is wrapped in a try/catch to allow it to pass,
-      even when it fails, essentially letting this serve as an optional check.
+        Therefore, it is wrapped in a try/catch to allow it to pass,
+        even when it fails, essentially letting this serve as an optional check.
        */
       try {
         $chargeEndpoint = $this->getChargeEndpoint() . $paymentChargeId;
@@ -349,5 +349,4 @@ class PaymentHelper {
   public function getAmountToPayTemp(): float {
     return $this->privateTempStore->get(self::AMOUNT_TO_PAY);
   }
-
 }
