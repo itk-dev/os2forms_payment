@@ -21,13 +21,13 @@
         "php": "^8.1",
         "drupal/webform": "^6.1",
         "drush/drush": "^11 || ^12",
-        "symfony/options-resolver": "^5.4 || ^6.0",
-        "itk-dev/serviceplatformen": "^1.4"
+        "symfony/options-resolver": "^5.4 || ^6.0"
     },
     "require-dev": {
         "drupal/coder": "^8.3",
         "dealerdirect/phpcodesniffer-composer-installer": "^0.7.1",
         "mglaman/drupal-check": "^1.4",
+        "mglaman/phpstan-drupal": "~1.2.0",
         "phpunit/phpunit": "^9.5"
     },
     "scripts": {
