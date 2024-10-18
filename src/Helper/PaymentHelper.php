@@ -3,7 +3,6 @@
 namespace Drupal\os2forms_payment\Helper;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Http\RequestStack;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\TempStore\PrivateTempStore;
@@ -12,6 +11,7 @@ use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
 use Drupal\webform\WebformSubmissionInterface;
 use GuzzleHttp\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Payment helper class.
