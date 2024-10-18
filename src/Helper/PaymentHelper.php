@@ -328,7 +328,7 @@ class PaymentHelper {
   }
 
   /**
-   * Sets the amount to pay in private tempoary storage.
+   * Sets the amount to pay in private temporary storage.
    *
    * @param float $amountToPay
    *   The amount to pay.
@@ -341,7 +341,7 @@ class PaymentHelper {
   }
 
   /**
-   * Gets the amount to pay in private tempoary storage.
+   * Gets the amount to pay from private temporary storage.
    *
    * @return float
    *   The amount to pay.
