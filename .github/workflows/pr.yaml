@@ -113,7 +113,7 @@ jobs:
         run: |
           # We need a Drupal project to run drupal-check (cf. https://github.com/mglaman/drupal-check#usage)
           # Install Drupal
-          composer --no-interaction create-project drupal/recommended-project:^9 --stability=dev drupal
+          composer --no-interaction create-project drupal/recommended-project:^10 --stability=dev drupal
           # Copy our module source code into the Drupal module folder.
           mkdir -p drupal/web/modules/contrib/os2forms_payment
           cp -r os2forms_payment.* composer.json src drupal/web/modules/contrib/os2forms_payment
