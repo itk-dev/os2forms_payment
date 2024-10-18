@@ -9,6 +9,10 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+### Updated
+
+- Made OS2Forms payment module Drupal 10 compatible
+
 ### Added
 
 - Added OS2Forms payment module
@@ -16,4 +20,4 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Corrected format of payment metods
+- Corrected format of payment methods
