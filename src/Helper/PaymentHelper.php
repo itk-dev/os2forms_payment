@@ -3,7 +3,6 @@
 namespace Drupal\os2forms_payment\Helper;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Http\RequestStack;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\TempStore\PrivateTempStore;
@@ -12,6 +11,7 @@ use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
 use Drupal\webform\WebformSubmissionInterface;
 use GuzzleHttp\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Payment helper class.
@@ -328,7 +328,7 @@ class PaymentHelper {
   }
 
   /**
-   * Sets the amount to pay in private tempoary storage.
+   * Sets the amount to pay in private temporary storage.
    *
    * @param float $amountToPay
    *   The amount to pay.
@@ -341,7 +341,7 @@ class PaymentHelper {
   }
 
   /**
-   * Gets the amount to pay in private tempoary storage.
+   * Gets the amount to pay from private temporary storage.
    *
    * @return float
    *   The amount to pay.
