@@ -109,8 +109,6 @@ class NetsEasyPaymentElement extends WebformElementBase {
       ],
     ];
 
-
-
     return $form;
   }
 
@@ -187,7 +185,6 @@ class NetsEasyPaymentElement extends WebformElementBase {
    *   Returns validation results.
    */
   public static function validatePayment(array &$element, FormStateInterface $formState): mixed {
-    return TRUE;
     $paymentHelper = \Drupal::service(PaymentHelper::class);
 
     $paymentHelper->validatePayment($element, $formState);
@@ -266,8 +263,13 @@ class NetsEasyPaymentElement extends WebformElementBase {
     );
   }
 
-  private function getAvailableLanguages(): array
-  {
+  /**
+   * Retrieves an array of available languages.
+   *
+   * @return array<string, string>
+   *   Array containing available languages.
+   */
+  private function getAvailableLanguages(): array {
     return [
       'da-DK' => 'Dansk',
       'en-GB' => 'English',

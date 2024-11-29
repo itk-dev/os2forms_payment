@@ -73,14 +73,14 @@ class NetsEasyController extends ControllerBase {
         'url' => $callbackUrl,
         'termsUrl' => $this->paymentHelper->getTermsUrl(),
         'merchantTermsUrl' => $this->paymentHelper->getTermsUrl(),
-        'merchantHandlesConsumerData' => true,
-        'publicDevice' => true,
+        'merchantHandlesConsumerData' => TRUE,
+        'publicDevice' => TRUE,
         'shipping' => [
-          'enableBillingAddress' => false,
+          'enableBillingAddress' => FALSE,
         ],
         "appearance" => [
-          "displayOptions" =>[
-            "showMerchantName" => true,
+          "displayOptions" => [
+            "showMerchantName" => TRUE,
           ],
         ],
       ],

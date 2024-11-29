@@ -12,12 +12,10 @@ use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\TempStore\PrivateTempStore;
 use Drupal\Core\TempStore\PrivateTempStoreFactory;
-use Drupal\os2forms_fbs_handler\Plugin\AdvancedQueue\JobType\FbsCreateUser;
 use Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType\NetsEasyPaymentHandler;
 use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
 use Drupal\webform\WebformSubmissionInterface;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -34,6 +32,11 @@ class PaymentHelper {
 
   use StringTranslationTrait;
   const AMOUNT_TO_PAY = 'AMOUNT_TO_PAY';
+  /**
+   * The ID of the queue.
+   *
+   * @var string
+   */
   private string $queueId = 'os2forms_payment';
 
   /**
@@ -112,8 +115,7 @@ class PaymentHelper {
    * @return void
    *   Return
    */
-  public function webformSubmissionInsert(WebFormSubmissionInterface $submission): void
-  {
+  public function webformSubmissionInsert(WebFormSubmissionInterface $submission): void {
     $logger_context = [
       'handler_id' => 'os2forms_payment',
       'channel' => 'webform_submission',
@@ -122,9 +124,9 @@ class PaymentHelper {
     ];
 
     /*
-  * The paymentReferenceField is not a part of the form submission,
-  * so we get it from the POST payload.
-  */
+     * The paymentReferenceField is not a part of the form submission,
+     * so we get it from the POST payload.
+     */
     $request = $this->requestStack->getCurrentRequest();
     $paymentId = $request->request->get('os2forms_payment_reference_field');
 
@@ -211,8 +213,7 @@ class PaymentHelper {
 
     $amountToPay = floatval($this->getAmountToPayTemp() * 100);
     $reservedAmount = floatval($result->payment->summary->reservedAmount ?? 0);
-    //$chargedAmount = floatval($result->payment->summary->chargedAmount ?? 0);
-
+    // $chargedAmount = floatval($result->payment->summary->chargedAmount ?? 0);
     if ($amountToPay !== $reservedAmount) {
       // Reserved amount mismatch.
       $formState->setError(
@@ -280,8 +281,8 @@ class PaymentHelper {
    */
   public function getUpdateReferenceInformationEndpoint(string $paymentId): string {
     return $this->getTestMode()
-      ? 'https://test.api.dibspayment.eu/v1/payments/'.$paymentId.'/referenceinformation'
-      : 'https://api.dibspayment.eu/v1/payments/'.$paymentId.'/referenceinformation';
+      ? 'https://test.api.dibspayment.eu/v1/payments/' . $paymentId . '/referenceinformation'
+      : 'https://api.dibspayment.eu/v1/payments/' . $paymentId . '/referenceinformation';
   }
 
   /**
@@ -290,8 +291,7 @@ class PaymentHelper {
    * @return string
    *   The endpoint URL.
    */
-  public function getCreatePaymentEndpoint(): string
-  {
+  public function getCreatePaymentEndpoint(): string {
     return $this->getTestMode()
       ? 'https://test.api.dibspayment.eu/v1/payments/'
       : 'https://api.dibspayment.eu/v1/payments/';
@@ -303,13 +303,11 @@ class PaymentHelper {
    * @return string
    *   The endpoint URL.
    */
-  public function getPaymentEndpoint(string $paymentId): string
-  {
+  public function getPaymentEndpoint(string $paymentId): string {
     return $this->getTestMode()
-      ? 'https://test.api.dibspayment.eu/v1/payments/'.$paymentId
-      : 'https://api.dibspayment.eu/v1/payments/'.$paymentId;
+      ? 'https://test.api.dibspayment.eu/v1/payments/' . $paymentId
+      : 'https://api.dibspayment.eu/v1/payments/' . $paymentId;
   }
-
 
   /**
    * Returns the Nets API payment charge endpoint.
@@ -319,8 +317,8 @@ class PaymentHelper {
    */
   public function getChargePaymentEndpoint(string $paymentId): string {
     return $this->getTestMode()
-      ? 'https://test.api.dibspayment.eu/v1/payments/'.$paymentId.'/charges'
-      : 'https://api.dibspayment.eu/v1/payments/'.$paymentId.'/charges';
+      ? 'https://test.api.dibspayment.eu/v1/payments/' . $paymentId . '/charges'
+      : 'https://api.dibspayment.eu/v1/payments/' . $paymentId . '/charges';
   }
 
   /**
@@ -333,7 +331,7 @@ class PaymentHelper {
     $contents = $response->getBody()->getContents();
 
     if (empty($contents)) {
-      return null;
+      return NULL;
     }
 
     return json_decode($contents);
@@ -363,10 +361,20 @@ class PaymentHelper {
   }
 
   /**
-   * @throws GuzzleException
+   * Handles an API request.
+   *
+   * @param string $method
+   *   The HTTP method for the request.
+   * @param string $endpoint
+   *   The endpoint URL.
+   * @param array $params
+   *   Optional. An associative array of parameters
+   *   to be sent in the request body.
+   *
+   * @return object|null
+   *   The response object returned from the API endpoint if present.
    */
-  public function handleApiRequest(string $method, string $endpoint, array $params = []): ?object
-  {
+  public function handleApiRequest(string $method, string $endpoint, array $params = []): ?object {
     $headers = [
       'Content-Type' => 'application/json',
       'Accept' => 'application/json',

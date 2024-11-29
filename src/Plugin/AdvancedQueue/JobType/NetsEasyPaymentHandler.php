@@ -2,7 +2,6 @@
 
 namespace Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType;
 
-use Drupal\advancedqueue\Annotation\AdvancedQueueJobType;
 use Drupal\advancedqueue\Job;
 use Drupal\advancedqueue\JobResult;
 use Drupal\advancedqueue\Plugin\AdvancedQueue\JobType\JobTypeBase;
@@ -24,9 +23,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   label = @Translation("Charge nets payment."),
  * )
  */
-
-final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFactoryPluginInterface
-{
+final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFactoryPluginInterface {
   /**
    * The submission logger.
    *
@@ -34,19 +31,17 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
    */
   protected LoggerChannelInterface $submissionLogger;
 
-
   /**
    * {@inheritdoc}
    */
   public function __construct(
-    array                            $configuration,
+    array $configuration,
                                      $plugin_id,
                                      $plugin_definition,
-    LoggerChannelFactoryInterface    $loggerFactory,
-    protected readonly Client        $httpClient,
+    LoggerChannelFactoryInterface $loggerFactory,
+    protected readonly Client $httpClient,
     protected readonly PaymentHelper $paymentHelper,
-  )
-  {
+  ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->submissionLogger = $loggerFactory->get('webform_submission');
   }
@@ -54,8 +49,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition)
-  {
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $configuration,
       $plugin_id,
@@ -69,18 +63,20 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
   /**
    * Process the job by handling payment stages.
    *
-   * @param Job $job The job object to process
+   * @param \Drupal\advancedqueue\Job $job
+   *   The job object to process.
    *
-   * @return JobResult The result of processing the job
+   * @return \Drupal\advancedqueue\JobResult
+   *   The result of processing the job.
    *
    * @throws \Exception|GuzzleException
+   *   Throws Exception.
    */
-  public function process(Job $job): JobResult
-  {
+  public function process(Job $job): JobResult {
     $payload = $job->getPayload();
     $stage = $payload['processing_stage'] ?? 0;
 
-    /** @var WebformSubmissionInterface $webformSubmission */
+    /** @var \Drupal\webform\Entity\WebformSubmissionInterface $webformSubmission */
     $webformSubmission = WebformSubmission::load($payload['submissionId']);
     $logger_context = [
       'handler_id' => 'os2forms_payment',
@@ -106,7 +102,8 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $this->submissionLogger->notice($this->t('The submission #@serial was successfully delivered', ['@serial' => $webformSubmission->serial()]), $logger_context);
 
       return JobResult::success();
-    } catch (\Exception|GuzzleException $e) {
+    }
+    catch (\Exception | GuzzleException $e) {
       $this->submissionLogger->error($this->t('The submission #@serial failed (@message)', [
         '@serial' => $webformSubmission->serial(),
         '@message' => $e->getMessage(),
@@ -119,21 +116,24 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
   /**
    * Get payment information and set relevant values in the job payload.
    *
-   * @param Job $job The job object containing payload information
-   * @param WebformSubmissionInterface $webformSubmission The webform submission related to the payment
+   * @param \Drupal\advancedqueue\Job $job
+   *   The job object containing payload information.
+   * @param \Drupal\webform\Entity\WebformSubmissionInterface $webformSubmission
+   *   The webform submission related to the payment.
    * @param array $logger_context
+   *   Context for logging.
    *
    * @throws \Exception|GuzzleException
+   *   Throws Exception.
    */
-  private function getPaymentAndSetRelevantValues(Job $job, WebformSubmissionInterface $webformSubmission, array $logger_context): void
-  {
+  private function getPaymentAndSetRelevantValues(Job $job, WebformSubmissionInterface $webformSubmission, array $logger_context): void {
     try {
       $payload = $job->getPayload();
       $paymentId = $payload['paymentId'];
       $submissionId = $webformSubmission->id();
       $webformId = $webformSubmission->getWebform()->id();
 
-      // Retrieve payment, save reference field
+      // Retrieve payment, save reference field.
       $paymentEndpoint = $this->paymentHelper->getPaymentEndpoint($paymentId);
       $result = $this->paymentHelper->handleApiRequest('GET', $paymentEndpoint);
 
@@ -142,7 +142,8 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $chargedAmount = floatval($result->payment->summary->chargedAmount ?? 0);
       $paymentReferenceSuffix = $result->payment->orderDetails->reference;
 
-      // Payment reference (field in NEXI backend) is defined as {optional suffix}:{webform_id}:{submission_id}
+      // Payment reference (field in NEXI backend)
+      // is defined as {optional suffix}:{webform_id}:{submission_id}.
       $paymentReferenceValue = $webformId . ':' . $submissionId;
 
       if ("undefined" !== $paymentReferenceSuffix) {
@@ -158,8 +159,8 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
 
       $job->setPayload($payload);
 
-
-    } catch (\Exception|GuzzleException $e) {
+    }
+    catch (\Exception | GuzzleException $e) {
       $this->submissionLogger->error($this->t('The submission #@serial failed (@message)', [
         '@serial' => $webformSubmission->serial(),
         '@message' => $e->getMessage(),
@@ -172,14 +173,17 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
   /**
    * Update the payment reference of the current job.
    *
-   * @param Job $job The job object containing payload information
-   * @param WebformSubmissionInterface $webformSubmission The webform submission related to the payment
+   * @param \Drupal\advancedqueue\Job $job
+   *   The job object containing payload information.
+   * @param \Drupal\webform\Entity\WebformSubmissionInterface $webformSubmission
+   *   The webform submission related to the payment.
    * @param array $logger_context
+   *   Context for logging.
    *
    * @throws \Exception|GuzzleException
+   *   Throws Exception.
    */
-  private function updatePaymentReference(Job $job, WebformSubmissionInterface $webformSubmission, array $logger_context): void
-  {
+  private function updatePaymentReference(Job $job, WebformSubmissionInterface $webformSubmission, array $logger_context): void {
     try {
       $payload = $job->getPayload();
       $paymentId = $payload['paymentId'];
@@ -196,7 +200,8 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $payload['processing_stage'] = 2;
       $job->setPayload($payload);
 
-    } catch (\Exception|GuzzleException $e) {
+    }
+    catch (\Exception | GuzzleException $e) {
       $this->submissionLogger->error($this->t('The submission #@serial failed (@message)', [
         '@serial' => $webformSubmission->serial(),
         '@message' => $e->getMessage(),
@@ -209,30 +214,33 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
   /**
    * Charge a payment of the current job.
    *
-   * @param Job $job The job object containing payload information
-   * @param WebformSubmissionInterface $webformSubmission The webform submission related to the payment
+   * @param \Drupal\advancedqueue\Job $job
+   *   The job object containing payload information.
+   * @param \Drupal\webform\Entity\WebformSubmissionInterface $webformSubmission
+   *   The webform submission related to the payment.
    * @param array $logger_context
+   *   Context for logging.
    *
    * @throws \Exception
+   *   Throws Exception.
    */
-  private function chargePayment(Job $job, WebformSubmissionInterface $webformSubmission, array $logger_context): void
-  {
+  private function chargePayment(Job $job, WebformSubmissionInterface $webformSubmission, array $logger_context): void {
     try {
       $payload = $job->getPayload();
       $paymentId = $payload['paymentId'];
       $reservedAmount = $payload['reservedAmount'];
 
-      // Validate charge
+      // Validate charge.
       $this->validateCharge($payload);
 
-      // Execute charge
+      // Execute charge.
       $chargePaymentEndpoint = $this->paymentHelper->getChargePaymentEndpoint($paymentId);
 
       $result = $this->paymentHelper->handleApiRequest('POST', $chargePaymentEndpoint, [
         'amount' => $reservedAmount,
       ]);
 
-      $paymentChargeId = $result->chargeId ?? null;
+      $paymentChargeId = $result->chargeId ?? NULL;
 
       if (!$paymentChargeId) {
         throw new \Exception('Payment could not be charged');
@@ -250,7 +258,8 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $payload['processing_stage'] = 3;
       $job->setPayload($payload);
 
-    }catch (\Exception $e) {
+    }
+    catch (\Exception $e) {
       $this->submissionLogger->error($this->t('The submission #@serial failed (@message)', [
         '@serial' => $webformSubmission->serial(),
         '@message' => $e->getMessage(),
@@ -263,11 +272,13 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
   /**
    * Validates the reservation and charge amounts.
    *
-   * @param array $payload The payload data containing reserved and charged amounts.
+   * @param array $payload
+   *   The payload data containing reserved and charged amounts.
+   *
    * @throws \Exception
+   *   Throws Exception.
    */
-  public function validateCharge(array $payload): void
-  {
+  public function validateCharge(array $payload): void {
     $reservedAmount = $payload['reservedAmount'];
     $chargedAmount = $payload['chargedAmount'];
     if ($reservedAmount <= 0) {
@@ -277,4 +288,5 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       throw new \Exception('Charged amount is not zero before attempting to charge');
     }
   }
+
 }
