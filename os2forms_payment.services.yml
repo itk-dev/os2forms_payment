@@ -3,6 +3,8 @@ services:
     arguments:
       - '@request_stack'
       - '@http_client'
+      - '@entity_type.manager'
+      - '@logger.factory'
       - '@tempstore.private'
 
   Drupal\os2forms_payment\Controller\NetsEasyController:
