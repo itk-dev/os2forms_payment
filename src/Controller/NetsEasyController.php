@@ -65,12 +65,24 @@ class NetsEasyController extends ControllerBase {
     if (!$callbackUrl || $amountToPay <= 0) {
       return new Response(json_encode(['error' => $this->t('An error has occurred. Please try again later.')]));
     }
-    $endpoint = $this->paymentHelper->getPaymentEndpoint();
+    $endpoint = $this->paymentHelper->getCreatePaymentEndpoint();
+
     $payload = json_encode([
       'checkout' => [
         'integrationType' => 'EmbeddedCheckout',
         'url' => $callbackUrl,
         'termsUrl' => $this->paymentHelper->getTermsUrl(),
+        'merchantTermsUrl' => $this->paymentHelper->getTermsUrl(),
+        'merchantHandlesConsumerData' => true,
+        'publicDevice' => true,
+        'shipping' => [
+          'enableBillingAddress' => false,
+        ],
+        "appearance" => [
+          "displayOptions" =>[
+            "showMerchantName" => true,
+          ],
+        ],
       ],
       'paymentMethodsConfiguration' => $paymentMethodsConfiguration,
       'order' => [
@@ -85,11 +97,11 @@ class NetsEasyController extends ControllerBase {
             'netTotalAmount' => $amountToPay,
           ],
         ],
+
         'amount' => $amountToPay,
         'currency' => 'DKK',
         'reference' => $paymentPosting,
       ],
-      'paymentPosting' => $paymentPosting,
     ]);
 
     $response = $this->httpClient->request(
