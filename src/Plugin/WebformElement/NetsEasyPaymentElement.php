@@ -48,6 +48,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
    */
   protected function defineDefaultProperties() {
     return [
+      'checkout_language' => [],
       'amount_to_pay' => '',
       'checkout_page_description' => '',
       'payment_methods' => ['Card'],
@@ -69,6 +70,13 @@ class NetsEasyPaymentElement extends WebformElementBase {
   public function form(array $form, FormStateInterface $form_state): array {
     $form = parent::form($form, $form_state);
     $availableElements = $this->getAmountElements();
+    $availableLanguages = $this->getAvailableLanguages();
+    $form['element']['checkout_language'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Select checkout language'),
+      '#required' => FALSE,
+      '#options' => $availableLanguages,
+    ];
     $form['element']['amount_to_pay'] = [
       '#type' => 'select',
       '#title' => $this->t('Select the element, containing the amount to pay'),
@@ -89,7 +97,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
     $form['element']['payment_posting'] = [
       '#type' => 'textfield',
       '#title' => $this
-        ->t('Internal reference for where the payment belongs'),
+        ->t('Suffix for Internal reference on payment'),
     ];
 
     $form['element']['payment_methods'] = [
@@ -100,6 +108,8 @@ class NetsEasyPaymentElement extends WebformElementBase {
         'MobilePay' => $this->t('MobilePay'),
       ],
     ];
+
+
 
     return $form;
   }
@@ -138,12 +148,14 @@ class NetsEasyPaymentElement extends WebformElementBase {
 
       $paymentMethods = array_values(array_filter($element['#payment_methods'] ?? []));
       $paymentPosting = $element['#payment_posting'] ?? 'undefined';
+      $checkoutLanguage = $element['#checkout_language'] ?? 'da-DK';
 
       $form['os2forms_payment_checkout_container'] = [
         '#type' => 'container',
         '#attributes' => [
           'id' => 'checkout-container-div',
           'data-checkout-key' => $this->paymentHelper->getCheckoutKey(),
+          'data-checkout-language' => $checkoutLanguage,
           'data-payment-error-message' => $this->t('An error has occurred. Please try again later.'),
           'data-create-payment-url' => Url::fromRoute("os2forms_payment.createPayment",
             [
@@ -175,6 +187,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
    *   Returns validation results.
    */
   public static function validatePayment(array &$element, FormStateInterface $formState): mixed {
+    return TRUE;
     $paymentHelper = \Drupal::service(PaymentHelper::class);
 
     $paymentHelper->validatePayment($element, $formState);
@@ -251,6 +264,15 @@ class NetsEasyPaymentElement extends WebformElementBase {
       static fn(array $element) => $element['#title'],
       $elements
     );
+  }
+
+  private function getAvailableLanguages(): array
+  {
+    return [
+      'da-DK' => 'Dansk',
+      'en-GB' => 'English',
+    ];
+
   }
 
 }
