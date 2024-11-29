@@ -14,5 +14,17 @@ use Drupal\os2forms_payment\Helper\PaymentHelper;
  *   Return
  */
 function os2forms_payment_webform_submission_presave(mixed $submission): void {
+  \Drupal::logger('webform_submission')->info('hest test');
   Drupal::service(PaymentHelper::class)->webformSubmissionPresave($submission);
+}
+
+/**
+ * Implements hook_webform_submission_insert().
+ *
+ * @param \Drupal\webform\WebformSubmissionInterface $submission
+ *   The webform submission that just being inserted.
+ */
+function os2forms_payment_webform_submission_insert(\Drupal\webform\WebformSubmissionInterface $submission) {
+
+  Drupal::service(PaymentHelper::class)->webformSubmissionInsert($submission);
 }
