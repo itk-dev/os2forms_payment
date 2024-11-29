@@ -2,8 +2,6 @@
 
 namespace Drupal\os2forms_payment\Helper;
 
-use Drupal\advancedqueue\Entity\Queue;
-use Drupal\advancedqueue\Job;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
@@ -12,6 +10,8 @@ use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\TempStore\PrivateTempStore;
 use Drupal\Core\TempStore\PrivateTempStoreFactory;
+use Drupal\advancedqueue\Entity\Queue;
+use Drupal\advancedqueue\Job;
 use Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType\NetsEasyPaymentHandler;
 use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
 use Drupal\webform\WebformSubmissionInterface;
