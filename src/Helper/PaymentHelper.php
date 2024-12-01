@@ -142,7 +142,13 @@ class PaymentHelper {
   }
 
   /**
+   * Finds the payment element within a webform submission.
    *
+   * @param \Drupal\webform\WebformSubmissionInterface $submission
+   *   The webform submission object.
+   *
+   * @return string|null
+   *   The key of the payment element if found, or NULL if not found.
    */
   private function findPaymentElement(WebformSubmissionInterface $submission) {
     $webformElements = $submission->getWebform()->getElementsDecodedAndFlattened();
