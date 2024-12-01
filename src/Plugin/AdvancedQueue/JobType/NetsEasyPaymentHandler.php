@@ -255,11 +255,17 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
        * return the value we just received.
        */
 
+      $submission = $this->paymentHelper->updateWebformSubmissionPaymentObject($webformSubmission, 'status', 'charged');
+      $submission->save();
+
       $payload['processing_stage'] = 3;
+
       $job->setPayload($payload);
 
     }
     catch (\Exception $e) {
+      $submission = $this->paymentHelper->updateWebformSubmissionPaymentObject($webformSubmission, 'status', 'charge failed');
+      $submission->save();
       $this->submissionLogger->error($this->t('The submission #@serial failed (@message)', [
         '@serial' => $webformSubmission->serial(),
         '@message' => $e->getMessage(),
