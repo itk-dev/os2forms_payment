@@ -2,6 +2,8 @@
 
 namespace Drupal\os2forms_payment\Helper;
 
+use Drupal\advancedqueue\Entity\Queue;
+use Drupal\advancedqueue\Job;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
@@ -10,8 +12,6 @@ use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\TempStore\PrivateTempStore;
 use Drupal\Core\TempStore\PrivateTempStoreFactory;
-use Drupal\advancedqueue\Entity\Queue;
-use Drupal\advancedqueue\Job;
 use Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType\NetsEasyPaymentHandler;
 use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
 use Drupal\webform\WebformSubmissionInterface;
@@ -31,6 +31,7 @@ class PaymentHelper {
   protected LoggerChannelInterface $submissionLogger;
 
   use StringTranslationTrait;
+
   const AMOUNT_TO_PAY = 'AMOUNT_TO_PAY';
   /**
    * The ID of the queue.
@@ -65,9 +66,115 @@ class PaymentHelper {
    *
    * @return void
    *   Return
+   *
+   * @throws \Exception
    */
   public function webformSubmissionPresave(WebFormSubmissionInterface $submission): void {
+    ['paymentElement' => $paymentElement, 'paymentElementMachineName' => $paymentElementMachineName] = $this->getWebformElementNames($submission);
+    $submissionData = $submission->getData();
+    if (isset($submissionData[$paymentElementMachineName])) {
+      return;
+    }
+
+    if (NULL === $paymentElement) {
+      throw new \Exception('Could not determine payment element.');
+    }
+
+    if (NULL === $paymentElementMachineName) {
+      throw new \Exception('Could not determine payment element machine name.');
+    }
+    /*
+     * The paymentReferenceField is not a part of the form submission,
+     * so we get it from the POST payload.
+     */
+    $request = $this->requestStack->getCurrentRequest();
+    $paymentReferenceField = $request->request->get('os2forms_payment_reference_field');
+
+    /*
+     * The goal here is to store the payment_id, amount_to_pay and status
+     * as a JSON object in the os2forms_payment submission value.
+     */
+
+    $amountToPay = $this->getAmountToPay($submissionData, $paymentElement['#amount_to_pay']);
+
+    if ($request && $amountToPay) {
+
+      $this->updateWebformSubmissionPaymentObject($submission, NULL, NULL, [
+        'payment_id' => $paymentReferenceField,
+        'amount' => $amountToPay,
+        'status' => 'not charged',
+      ]);
+
+    }
+  }
+
+  /**
+   * Updates the payment object in a webform submission.
+   *
+   * @param \Drupal\webform\WebformSubmissionInterface $webformSubmission
+   *   The webform submission to update.
+   * @param string|null $key
+   *   The key of the payment object to update.
+   * @param mixed|null $value
+   *   The value to set for the payment object key.
+   * @param array|null $paymentObject
+   *   The payment object to replace the existing with.
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   *   Throws Exception
+   */
+  public function updateWebformSubmissionPaymentObject(WebformSubmissionInterface $webformSubmission, string $key = NULL, mixed $value = NULL, array $paymentObject = NULL): WebformSubmissionInterface
+  {
+    $submissionData = $webformSubmission->getData();
+    /*  $webformElements = $webformSubmission->getWebform()->getElementsDecodedAndFlattened();
+
+    foreach ($webformElements as $elementKey => $webformElement) {
+    if ('os2forms_payment' === ($webformElement['#type'] ?? NULL)) {
+    $paymentElementMachineName = $elementKey;
+    break;
+    }
+    }*/
+
+    $paymentElementMachineName = $this->findPaymentElement($webformSubmission);
+
+    if ($paymentElementMachineName !== NULL) {
+      if ($paymentObject !== NULL) {
+        $submissionData[$paymentElementMachineName] = json_encode(['paymentObject' => $paymentObject]);
+      }
+      elseif ($key !== NULL && $value !== NULL) {
+        $paymentData = json_decode($submissionData[$paymentElementMachineName], TRUE);
+        $paymentData['paymentObject'][$key] = $value;
+        $submissionData[$paymentElementMachineName] = json_encode($paymentData);
+      }
+      $webformSubmission->setData($submissionData);
+    }
+    return $webformSubmission;
+  }
+
+  private function findPaymentElement(WebformSubmissionInterface $submission) {
     $webformElements = $submission->getWebform()->getElementsDecodedAndFlattened();
+
+    foreach ($webformElements as $elementKey => $webformElement) {
+      if ('os2forms_payment' === ($webformElement['#type'] ?? NULL)) {
+         return $elementKey;
+      }
+    }
+
+
+  }
+
+  /**
+   * Retrieves webform element names from a webform submission.
+   *
+   * @param \Drupal\webform\WebformSubmissionInterface $submission
+   *   The webform submission.
+   *
+   * @return array
+   *   An array containing the payment element and its machine name.
+   */
+  private function getWebformElementNames(WebformSubmissionInterface $submission): array {
+    $webformElements = $submission->getWebform()->getElementsDecodedAndFlattened();
+
     $paymentElement = NULL;
     $paymentElementMachineName = NULL;
 
@@ -78,35 +185,11 @@ class PaymentHelper {
         break;
       }
     }
-    if (NULL === $paymentElement) {
-      return;
-    }
 
-    /*
-     * The paymentReferenceField is not a part of the form submission,
-     * so we get it from the POST payload.
-     */
-    $request = $this->requestStack->getCurrentRequest();
-    $paymentReferenceField = $request->request->get('os2forms_payment_reference_field');
-
-    /*
-     * The goal here is to store the payment_id and amount_to_pay
-     * as a JSON object in the os2forms_payment submission value.
-     */
-    $submissionData = $submission->getData();
-    $amountToPay = $this->getAmountToPay($submissionData, $paymentElement['#amount_to_pay']);
-
-    if ($request && $amountToPay) {
-      $payment_object = [
-        'paymentObject' => [
-          'payment_id' => $paymentReferenceField,
-          'amount' => $amountToPay,
-        ],
-      ];
-
-      $submission_data[$paymentElementMachineName] = json_encode($payment_object);
-      $submission->setData($submission_data);
-    }
+    return [
+      'paymentElement' => $paymentElement,
+      'paymentElementMachineName' => $paymentElementMachineName,
+    ];
   }
 
   /**
@@ -149,7 +232,7 @@ class PaymentHelper {
    */
   private function getQueue(): ?Queue {
     $queueStorage = $this->entityTypeManager->getStorage('advancedqueue_queue');
-    /** @var ?\Drupal\advancedqueue\Entity\Queue $queue */
+    /** @var ?Queue $queue */
     $queue = $queueStorage->load($this->queueId);
 
     return $queue;
