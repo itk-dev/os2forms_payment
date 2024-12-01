@@ -221,10 +221,10 @@ class NetsEasyPaymentElement extends WebformElementBase {
           '#title' => $this->t('Amount'),
           '#markup' => $paymentData->amount,
         ];
-        $form['posting'] = [
+        $form['status'] = [
           '#type' => 'item',
-          '#title' => $this->t('Posting'),
-          '#markup' => $paymentData->posting ?? $this->t('undefined'),
+          '#title' => $this->t('Status'),
+          '#markup' => $paymentData->status ?? $this->t('undefined'),
         ];
         return $form;
       }
