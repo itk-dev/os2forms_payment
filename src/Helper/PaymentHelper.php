@@ -2,8 +2,6 @@
 
 namespace Drupal\os2forms_payment\Helper;
 
-use Drupal\advancedqueue\Entity\Queue;
-use Drupal\advancedqueue\Job;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
@@ -12,6 +10,8 @@ use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\TempStore\PrivateTempStore;
 use Drupal\Core\TempStore\PrivateTempStoreFactory;
+use Drupal\advancedqueue\Entity\Queue;
+use Drupal\advancedqueue\Job;
 use Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType\NetsEasyPaymentHandler;
 use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
 use Drupal\webform\WebformSubmissionInterface;
@@ -121,20 +121,10 @@ class PaymentHelper {
    *   The payment object to replace the existing with.
    *
    * @throws \Drupal\Core\Entity\EntityStorageException
-   *   Throws Exception
+   *   Throws Exception.
    */
-  public function updateWebformSubmissionPaymentObject(WebformSubmissionInterface $webformSubmission, string $key = NULL, mixed $value = NULL, array $paymentObject = NULL): WebformSubmissionInterface
-  {
+  public function updateWebformSubmissionPaymentObject(WebformSubmissionInterface $webformSubmission, ?string $key = NULL, mixed $value = NULL, ?array $paymentObject = NULL): WebformSubmissionInterface {
     $submissionData = $webformSubmission->getData();
-    /*  $webformElements = $webformSubmission->getWebform()->getElementsDecodedAndFlattened();
-
-    foreach ($webformElements as $elementKey => $webformElement) {
-    if ('os2forms_payment' === ($webformElement['#type'] ?? NULL)) {
-    $paymentElementMachineName = $elementKey;
-    break;
-    }
-    }*/
-
     $paymentElementMachineName = $this->findPaymentElement($webformSubmission);
 
     if ($paymentElementMachineName !== NULL) {
@@ -151,15 +141,17 @@ class PaymentHelper {
     return $webformSubmission;
   }
 
+  /**
+   *
+   */
   private function findPaymentElement(WebformSubmissionInterface $submission) {
     $webformElements = $submission->getWebform()->getElementsDecodedAndFlattened();
 
     foreach ($webformElements as $elementKey => $webformElement) {
       if ('os2forms_payment' === ($webformElement['#type'] ?? NULL)) {
-         return $elementKey;
+        return $elementKey;
       }
     }
-
 
   }
 
