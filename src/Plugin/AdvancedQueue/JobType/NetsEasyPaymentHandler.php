@@ -119,7 +119,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
    * @param array $logger_context
    *   Context for logging.
    *
-   * @throws Exception|GuzzleException
+   * @throws \Drupal\os2forms_payment\Exception\RuntimeException
    *   Throws Exception.
    */
   private function getPaymentAndSetRelevantValues(Job $job, WebformSubmissionInterface $webformSubmission, array $logger_context): void {
@@ -142,7 +142,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       // is defined as {optional suffix}:{webform_id}:{submission_id}.
       $paymentReferenceValue = $webformId . ':' . $submissionId;
 
-      if ("undefined" !== $paymentReferenceSuffix) {
+      if ('undefined' !== $paymentReferenceSuffix) {
         $paymentReferenceValue = $paymentReferenceValue . ':' . $paymentReferenceSuffix;
       }
 
@@ -291,8 +291,4 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
     }
   }
 
-  public function log($level, $message, array $context = array())
-  {
-    // TODO: Implement log() method.
-  }
 }

@@ -178,7 +178,7 @@ class PaymentHelper {
    * @return void
    *   Return
    *
-   * @throws RuntimeException
+   * @throws \Drupal\os2forms_payment\Exception\RuntimeException
    *   Throws exception.
    */
   public function webformSubmissionInsert(WebFormSubmissionInterface $submission): void {
@@ -339,7 +339,10 @@ class PaymentHelper {
   }
 
   /**
+   * Returns the base URL based on the test mode setting.
    *
+   * @return string
+   *   The base URL for API requests.
    */
   public function getBaseUrl(): string {
     return $this->getTestMode()
@@ -444,7 +447,7 @@ class PaymentHelper {
    * @return object|null
    *   The response object returned from the API endpoint if present.
    *
-   * @throws RuntimeException|\GuzzleHttp\Exception\GuzzleException
+   * @throws \Drupal\os2forms_payment\Exception\RuntimeException|\GuzzleHttp\Exception\GuzzleException
    *   Throws exception.
    */
   public function handleApiRequest(string $method, string $endpoint, array $params = []): ?object {
@@ -462,7 +465,8 @@ class PaymentHelper {
       );
 
       return $this->getResponseObject($response);
-    }  catch (\RuntimeException $e) {
+    }
+    catch (\RuntimeException $e) {
       throw new RuntimeException("Request to {$endpoint} failed.", $e->getCode(), $e);
     }
 
