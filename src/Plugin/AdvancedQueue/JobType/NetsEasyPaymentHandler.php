@@ -7,6 +7,8 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\advancedqueue\Job;
 use Drupal\advancedqueue\JobResult;
 use Drupal\advancedqueue\Plugin\AdvancedQueue\JobType\JobTypeBase;
+use Drupal\os2forms_payment\Exception\Exception;
+use Drupal\os2forms_payment\Exception\RuntimeException;
 use Drupal\os2forms_payment\Helper\PaymentHelper;
 use Drupal\webform\Entity\WebformSubmission;
 use Drupal\webform\WebformSubmissionInterface;
@@ -97,7 +99,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
 
       return JobResult::success();
     }
-    catch (\Exception | GuzzleException $e) {
+    catch (Exception | GuzzleException $e) {
       $this->logger->error($this->t('The submission #@serial failed (@message)', [
         '@serial' => $webformSubmission->serial(),
         '@message' => $e->getMessage(),
@@ -117,7 +119,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
    * @param array $logger_context
    *   Context for logging.
    *
-   * @throws \Exception|GuzzleException
+   * @throws Exception|GuzzleException
    *   Throws Exception.
    */
   private function getPaymentAndSetRelevantValues(Job $job, WebformSubmissionInterface $webformSubmission, array $logger_context): void {
@@ -154,7 +156,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $job->setPayload($payload);
 
     }
-    catch (\Exception | GuzzleException $e) {
+    catch (RuntimeException $e) {
       $this->logger->error($this->t('The submission #@serial failed (@message)', [
         '@serial' => $webformSubmission->serial(),
         '@message' => $e->getMessage(),
@@ -195,7 +197,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $job->setPayload($payload);
 
     }
-    catch (\Exception | GuzzleException $e) {
+    catch (RuntimeException $e) {
       $this->logger->error($this->t('The submission #@serial failed (@message)', [
         '@serial' => $webformSubmission->serial(),
         '@message' => $e->getMessage(),
@@ -257,7 +259,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $job->setPayload($payload);
 
     }
-    catch (\Exception $e) {
+    catch (RuntimeException $e) {
       $submission = $this->paymentHelper->updateWebformSubmissionPaymentObject($webformSubmission, 'status', 'charge failed');
       $submission->save();
       $this->logger->error($this->t('The submission #@serial failed (@message)', [
@@ -282,10 +284,10 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
     $reservedAmount = $payload['reservedAmount'];
     $chargedAmount = $payload['chargedAmount'];
     if ($reservedAmount <= 0) {
-      throw new \Exception('Reserved amount is zero when validating reserved amount');
+      throw new Exception('Reserved amount is zero when validating reserved amount');
     }
     if ($chargedAmount != 0) {
-      throw new \Exception('Charged amount is not zero before attempting to charge');
+      throw new Exception('Charged amount is not zero before attempting to charge');
     }
   }
 

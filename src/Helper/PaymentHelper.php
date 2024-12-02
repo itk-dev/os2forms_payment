@@ -7,11 +7,12 @@ use Drupal\advancedqueue\Job;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Logger\LoggerChannel;
-use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\TempStore\PrivateTempStore;
 use Drupal\Core\TempStore\PrivateTempStoreFactory;
+use Drupal\os2forms_payment\Exception\Exception;
+use Drupal\os2forms_payment\Exception\RuntimeException;
 use Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType\NetsEasyPaymentHandler;
 use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
 use Drupal\webform\WebformSubmissionInterface;
@@ -45,11 +46,11 @@ class PaymentHelper {
    * {@inheritDoc}
    */
   public function __construct(
-    private readonly RequestStack               $requestStack,
-    private readonly ClientInterface            $httpClient,
+    private readonly RequestStack $requestStack,
+    private readonly ClientInterface $httpClient,
     private readonly EntityTypeManagerInterface $entityTypeManager,
-    private readonly LoggerChannel              $logger,
-    PrivateTempStoreFactory                     $tempStore,
+    private readonly LoggerChannel $logger,
+    PrivateTempStoreFactory $tempStore,
   ) {
     $this->privateTempStore = $tempStore->get('os2forms_payment');
   }
@@ -59,8 +60,6 @@ class PaymentHelper {
    *
    * @return void
    *   Return
-   *
-   * @throws \Exception
    */
   public function webformSubmissionPresave(WebFormSubmissionInterface $submission): void {
     ['paymentElement' => $paymentElement, 'paymentElementMachineName' => $paymentElementMachineName] = $this->getWebformElementNames($submission);
@@ -105,9 +104,6 @@ class PaymentHelper {
    *   The value to set for the payment object key.
    * @param array|null $paymentObject
    *   The payment object to replace the existing with.
-   *
-   * @throws \Drupal\Core\Entity\EntityStorageException
-   *   Throws Exception.
    */
   public function updateWebformSubmissionPaymentObject(WebformSubmissionInterface $webformSubmission, ?string $key = NULL, mixed $value = NULL, ?array $paymentObject = NULL): WebformSubmissionInterface {
     $submissionData = $webformSubmission->getData();
@@ -136,8 +132,7 @@ class PaymentHelper {
    * @return string|null
    *   The key of the payment element if found, or NULL if not found.
    */
-  private function findPaymentElementKey(WebformSubmissionInterface $submission): ?string
-  {
+  private function findPaymentElementKey(WebformSubmissionInterface $submission): ?string {
     $webformElements = $submission->getWebform()->getElementsDecodedAndFlattened();
 
     foreach ($webformElements as $elementKey => $webformElement) {
@@ -145,7 +140,7 @@ class PaymentHelper {
         return $elementKey;
       }
     }
-  return NULL;
+    return NULL;
   }
 
   /**
@@ -182,6 +177,9 @@ class PaymentHelper {
    *
    * @return void
    *   Return
+   *
+   * @throws RuntimeException
+   *   Throws exception.
    */
   public function webformSubmissionInsert(WebFormSubmissionInterface $submission): void {
     $logger_context = [
@@ -201,7 +199,7 @@ class PaymentHelper {
     /** @var \Drupal\advancedqueue\Entity\Queue $queue */
     $queue = $this->getQueue();
     if (!$queue) {
-      throw new \RuntimeException(sprintf('Queue with ID %s does not exist.', $this->queueId));
+      throw new Exception(sprintf('Queue with ID %s does not exist.', $this->queueId));
     }
     $job = Job::create(NetsEasyPaymentHandler::class, [
       'submissionId' => $submission->id(),
@@ -340,6 +338,9 @@ class PaymentHelper {
     return $this->getPaymentSettings()['test_mode'] ?? TRUE;
   }
 
+  /**
+   *
+   */
   public function getBaseUrl(): string {
     return $this->getTestMode()
       ? 'https://test.api.dibspayment.eu/'
@@ -442,6 +443,9 @@ class PaymentHelper {
    *
    * @return object|null
    *   The response object returned from the API endpoint if present.
+   *
+   * @throws RuntimeException|\GuzzleHttp\Exception\GuzzleException
+   *   Throws exception.
    */
   public function handleApiRequest(string $method, string $endpoint, array $params = []): ?object {
     $headers = [
@@ -450,13 +454,18 @@ class PaymentHelper {
       'Authorization' => $this->getSecretKey(),
     ];
 
-    $response = $this->httpClient->request(
-      $method,
-      $endpoint,
-      ['headers' => $headers, 'json' => $params]
-    );
+    try {
+      $response = $this->httpClient->request(
+        $method,
+        $endpoint,
+        ['headers' => $headers, 'json' => $params]
+      );
 
-    return $this->getResponseObject($response);
+      return $this->getResponseObject($response);
+    }  catch (\RuntimeException $e) {
+      throw new RuntimeException("Request to {$endpoint} failed.", $e->getCode(), $e);
+    }
+
   }
 
 }
