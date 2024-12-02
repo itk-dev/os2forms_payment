@@ -70,9 +70,10 @@ class PaymentHelper {
    * @throws \Exception
    */
   public function webformSubmissionPresave(WebFormSubmissionInterface $submission): void {
+
     ['paymentElement' => $paymentElement, 'paymentElementMachineName' => $paymentElementMachineName] = $this->getWebformElementNames($submission);
     $submissionData = $submission->getData();
-    if (isset($submissionData[$paymentElementMachineName])) {
+    if (!isset($submissionData[$paymentElementMachineName])) {
       return;
     }
 
