@@ -73,17 +73,10 @@ class PaymentHelper {
 
     ['paymentElement' => $paymentElement, 'paymentElementMachineName' => $paymentElementMachineName] = $this->getWebformElementNames($submission);
     $submissionData = $submission->getData();
-    if (!isset($submissionData[$paymentElementMachineName])) {
+    if (!isset($paymentElement) && !isset($paymentElementMachineName)) {
       return;
     }
 
-    if (NULL === $paymentElement) {
-      throw new \Exception('Could not determine payment element.');
-    }
-
-    if (NULL === $paymentElementMachineName) {
-      throw new \Exception('Could not determine payment element machine name.');
-    }
     /*
      * The paymentReferenceField is not a part of the form submission,
      * so we get it from the POST payload.
@@ -98,7 +91,7 @@ class PaymentHelper {
 
     $amountToPay = $this->getAmountToPay($submissionData, $paymentElement['#amount_to_pay']);
 
-    if ($request && $amountToPay) {
+    if ($paymentReferenceField && $request && $amountToPay) {
 
       $this->updateWebformSubmissionPaymentObject($submission, NULL, NULL, [
         'payment_id' => $paymentReferenceField,
