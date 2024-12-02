@@ -2,16 +2,16 @@
 
 namespace Drupal\os2forms_payment\Helper;
 
+use Drupal\advancedqueue\Entity\Queue;
+use Drupal\advancedqueue\Job;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Drupal\Core\Logger\LoggerChannel;
 use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\TempStore\PrivateTempStore;
 use Drupal\Core\TempStore\PrivateTempStoreFactory;
-use Drupal\advancedqueue\Entity\Queue;
-use Drupal\advancedqueue\Job;
 use Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType\NetsEasyPaymentHandler;
 use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
 use Drupal\webform\WebformSubmissionInterface;
@@ -23,12 +23,6 @@ use Symfony\Component\HttpFoundation\RequestStack;
  * Payment helper class.
  */
 class PaymentHelper {
-  /**
-   * The submission logger.
-   *
-   * @var \Drupal\Core\Logger\LoggerChannelInterface
-   */
-  protected LoggerChannelInterface $submissionLogger;
 
   use StringTranslationTrait;
 
@@ -51,14 +45,13 @@ class PaymentHelper {
    * {@inheritDoc}
    */
   public function __construct(
-    private readonly RequestStack $requestStack,
-    private readonly ClientInterface $httpClient,
+    private readonly RequestStack               $requestStack,
+    private readonly ClientInterface            $httpClient,
     private readonly EntityTypeManagerInterface $entityTypeManager,
-    private readonly LoggerChannelFactoryInterface $loggerFactory,
-    PrivateTempStoreFactory $tempStore,
+    private readonly LoggerChannel              $logger,
+    PrivateTempStoreFactory                     $tempStore,
   ) {
     $this->privateTempStore = $tempStore->get('os2forms_payment');
-    $this->submissionLogger = $this->loggerFactory->get('webform_submission');
   }
 
   /**
@@ -70,7 +63,6 @@ class PaymentHelper {
    * @throws \Exception
    */
   public function webformSubmissionPresave(WebFormSubmissionInterface $submission): void {
-
     ['paymentElement' => $paymentElement, 'paymentElementMachineName' => $paymentElementMachineName] = $this->getWebformElementNames($submission);
     $submissionData = $submission->getData();
     if (!isset($paymentElement) && !isset($paymentElementMachineName)) {
@@ -119,7 +111,7 @@ class PaymentHelper {
    */
   public function updateWebformSubmissionPaymentObject(WebformSubmissionInterface $webformSubmission, ?string $key = NULL, mixed $value = NULL, ?array $paymentObject = NULL): WebformSubmissionInterface {
     $submissionData = $webformSubmission->getData();
-    $paymentElementMachineName = $this->findPaymentElement($webformSubmission);
+    $paymentElementMachineName = $this->findPaymentElementKey($webformSubmission);
 
     if ($paymentElementMachineName !== NULL) {
       if ($paymentObject !== NULL) {
@@ -144,7 +136,8 @@ class PaymentHelper {
    * @return string|null
    *   The key of the payment element if found, or NULL if not found.
    */
-  private function findPaymentElement(WebformSubmissionInterface $submission) {
+  private function findPaymentElementKey(WebformSubmissionInterface $submission): ?string
+  {
     $webformElements = $submission->getWebform()->getElementsDecodedAndFlattened();
 
     foreach ($webformElements as $elementKey => $webformElement) {
@@ -152,7 +145,7 @@ class PaymentHelper {
         return $elementKey;
       }
     }
-
+  return NULL;
   }
 
   /**
@@ -216,7 +209,7 @@ class PaymentHelper {
     ]);
     $queue->enqueueJob($job);
 
-    $this->submissionLogger->notice($this->t('Added submission #@serial to queue for processing', ['@serial' => $submission->serial()]), $logger_context);
+    $this->logger->notice($this->t('Added submission #@serial to queue for processing', ['@serial' => $submission->serial()]), $logger_context);
   }
 
   /**
@@ -288,7 +281,6 @@ class PaymentHelper {
 
     $amountToPay = floatval($this->getAmountToPayTemp() * 100);
     $reservedAmount = floatval($result->payment->summary->reservedAmount ?? 0);
-    // $chargedAmount = floatval($result->payment->summary->chargedAmount ?? 0);
     if ($amountToPay !== $reservedAmount) {
       // Reserved amount mismatch.
       $formState->setError(
@@ -348,6 +340,12 @@ class PaymentHelper {
     return $this->getPaymentSettings()['test_mode'] ?? TRUE;
   }
 
+  public function getBaseUrl(): string {
+    return $this->getTestMode()
+      ? 'https://test.api.dibspayment.eu/'
+      : 'https://api.dibspayment.eu/';
+  }
+
   /**
    * Returns the Nets API update endpoint.
    *
@@ -355,9 +353,7 @@ class PaymentHelper {
    *   The endpoint URL.
    */
   public function getUpdateReferenceInformationEndpoint(string $paymentId): string {
-    return $this->getTestMode()
-      ? 'https://test.api.dibspayment.eu/v1/payments/' . $paymentId . '/referenceinformation'
-      : 'https://api.dibspayment.eu/v1/payments/' . $paymentId . '/referenceinformation';
+    return $this->getBaseUrl() . "v1/payments/{$paymentId}/referenceinformation";
   }
 
   /**
@@ -367,9 +363,7 @@ class PaymentHelper {
    *   The endpoint URL.
    */
   public function getCreatePaymentEndpoint(): string {
-    return $this->getTestMode()
-      ? 'https://test.api.dibspayment.eu/v1/payments/'
-      : 'https://api.dibspayment.eu/v1/payments/';
+    return $this->getBaseUrl() . 'v1/payments/';
   }
 
   /**
