@@ -2,8 +2,7 @@
 
 namespace Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType;
 
-use Drupal\Core\Logger\LoggerChannelFactoryInterface;
-use Drupal\Core\Logger\LoggerChannelInterface;
+use Drupal\Core\Logger\LoggerChannel;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\advancedqueue\Job;
 use Drupal\advancedqueue\JobResult;
@@ -24,12 +23,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFactoryPluginInterface {
-  /**
-   * The submission logger.
-   *
-   * @var \Drupal\Core\Logger\LoggerChannelInterface
-   */
-  protected LoggerChannelInterface $submissionLogger;
 
   /**
    * {@inheritdoc}
@@ -38,23 +31,22 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
     array $configuration,
     $plugin_id,
     $plugin_definition,
-    LoggerChannelFactoryInterface $loggerFactory,
+    protected readonly LoggerChannel $logger,
     protected readonly Client $httpClient,
     protected readonly PaymentHelper $paymentHelper,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->submissionLogger = $loggerFactory->get('webform_submission');
   }
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static(
+    return new NetsEasyPaymentHandler(
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('logger.factory'),
+      $container->get('logger.channel.os2forms_payment'),
       $container->get('http_client'),
       $container->get('Drupal\os2forms_payment\Helper\PaymentHelper'),
     );
@@ -73,11 +65,13 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
    *   Throws Exception.
    */
   public function process(Job $job): JobResult {
+
     $payload = $job->getPayload();
     $stage = $payload['processing_stage'] ?? 0;
 
     /** @var \Drupal\webform\Entity\WebformSubmissionInterface $webformSubmission */
     $webformSubmission = WebformSubmission::load($payload['submissionId']);
+
     $logger_context = [
       'handler_id' => 'os2forms_payment',
       'channel' => 'webform_submission',
@@ -99,12 +93,12 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
         $this->chargePayment($job, $webformSubmission, $logger_context);
       }
 
-      $this->submissionLogger->notice($this->t('The submission #@serial was successfully delivered', ['@serial' => $webformSubmission->serial()]), $logger_context);
+      $this->logger->notice($this->t('The submission #@serial was successfully delivered', ['@serial' => $webformSubmission->serial()]), $logger_context);
 
       return JobResult::success();
     }
     catch (\Exception | GuzzleException $e) {
-      $this->submissionLogger->error($this->t('The submission #@serial failed (@message)', [
+      $this->logger->error($this->t('The submission #@serial failed (@message)', [
         '@serial' => $webformSubmission->serial(),
         '@message' => $e->getMessage(),
       ]), $logger_context);
@@ -161,7 +155,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
 
     }
     catch (\Exception | GuzzleException $e) {
-      $this->submissionLogger->error($this->t('The submission #@serial failed (@message)', [
+      $this->logger->error($this->t('The submission #@serial failed (@message)', [
         '@serial' => $webformSubmission->serial(),
         '@message' => $e->getMessage(),
       ]), $logger_context);
@@ -202,7 +196,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
 
     }
     catch (\Exception | GuzzleException $e) {
-      $this->submissionLogger->error($this->t('The submission #@serial failed (@message)', [
+      $this->logger->error($this->t('The submission #@serial failed (@message)', [
         '@serial' => $webformSubmission->serial(),
         '@message' => $e->getMessage(),
       ]), $logger_context);
@@ -266,7 +260,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
     catch (\Exception $e) {
       $submission = $this->paymentHelper->updateWebformSubmissionPaymentObject($webformSubmission, 'status', 'charge failed');
       $submission->save();
-      $this->submissionLogger->error($this->t('The submission #@serial failed (@message)', [
+      $this->logger->error($this->t('The submission #@serial failed (@message)', [
         '@serial' => $webformSubmission->serial(),
         '@message' => $e->getMessage(),
       ]), $logger_context);
@@ -295,4 +289,8 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
     }
   }
 
+  public function log($level, $message, array $context = array())
+  {
+    // TODO: Implement log() method.
+  }
 }
