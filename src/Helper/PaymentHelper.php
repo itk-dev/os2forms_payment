@@ -17,6 +17,7 @@ use Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType\NetsEasyPaymentHandler;
 use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
 use Drupal\webform\WebformSubmissionInterface;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -264,17 +265,12 @@ class PaymentHelper {
 
     $paymentEndpoint = $this->getPaymentEndpoint($paymentId);
 
-    $response = $this->httpClient->request(
-      'GET',
-      $paymentEndpoint,
-      [
-        'headers' => [
-          'Content-Type' => 'application/json',
-          'Accept' => 'application/json',
-          'Authorization' => $this->getSecretKey(),
-        ],
-      ]
-    );
+      try {
+          $response = $this->handleApiRequest('GET', $paymentEndpoint);
+      } catch (RuntimeException $e) {
+      } catch (GuzzleException $e) {
+      }
+
     $result = $this->getResponseObject($response);
 
     $amountToPay = floatval($this->getAmountToPayTemp() * 100);
@@ -466,7 +462,13 @@ class PaymentHelper {
 
       return $this->getResponseObject($response);
     }
-    catch (\RuntimeException $e) {
+    catch (\Throwable $e) {
+      $this->logger->error($this->t('Error {@code} thrown by api request to {@endpoint}. Message: {@message}', [
+        '@endpoint' => $endpoint,
+        '@code' => $e->getCode(),
+        '@message' => $e->getMessage(),
+      ]));
+
       throw new RuntimeException("Request to {$endpoint} failed.", $e->getCode(), $e);
     }
 

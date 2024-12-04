@@ -4,13 +4,11 @@ services:
     arguments: [ 'os2forms_payment' ]
 
   Drupal\os2forms_payment\Helper\PaymentHelper:
-    class: Drupal\os2forms_payment\Helper\PaymentHelper
     autowire: true
     arguments:
       $logger: '@logger.channel.os2forms_payment'
 
   Drupal\os2forms_payment\Controller\NetsEasyController:
-    class: Drupal\os2forms_payment\Controller\NetsEasyController
     autowire: true
     arguments:
       $httpClient: '@http_client'

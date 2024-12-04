@@ -99,9 +99,10 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
 
       return JobResult::success();
     }
-    catch (Exception | GuzzleException $e) {
-      $this->logger->error($this->t('The submission #@serial failed (@message)', [
+    catch (\Throwable $e) {
+      $this->logger->error($this->t('Error {@code} thrown while processing submission #@serial. Message: {@message}', [
         '@serial' => $webformSubmission->serial(),
+        '@code' => $e->getCode(),
         '@message' => $e->getMessage(),
       ]), $logger_context);
 
@@ -119,7 +120,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
    * @param array $logger_context
    *   Context for logging.
    *
-   * @throws \Drupal\os2forms_payment\Exception\RuntimeException
+   * @throws RuntimeException
    *   Throws Exception.
    */
   private function getPaymentAndSetRelevantValues(Job $job, WebformSubmissionInterface $webformSubmission, array $logger_context): void {
@@ -156,13 +157,14 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $job->setPayload($payload);
 
     }
-    catch (RuntimeException $e) {
-      $this->logger->error($this->t('The submission #@serial failed (@message)', [
+    catch (\Throwable $e) {
+      $this->logger->error($this->t('Error {@code} thrown while getting payment. Message: {@message}', [
         '@serial' => $webformSubmission->serial(),
+        '@code' => $e->getCode(),
         '@message' => $e->getMessage(),
       ]), $logger_context);
 
-      throw $e;
+      throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
     }
   }
 
@@ -197,13 +199,14 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $job->setPayload($payload);
 
     }
-    catch (RuntimeException $e) {
-      $this->logger->error($this->t('The submission #@serial failed (@message)', [
+    catch (\Throwable $e) {
+      $this->logger->error($this->t('Error {@code} thrown while updating payment reference. Message: {@message}', [
         '@serial' => $webformSubmission->serial(),
+        '@code' => $e->getCode(),
         '@message' => $e->getMessage(),
       ]), $logger_context);
 
-      throw $e;
+      throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
     }
   }
 
@@ -239,7 +242,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $paymentChargeId = $result->chargeId ?? NULL;
 
       if (!$paymentChargeId) {
-        throw new \Exception('Payment could not be charged');
+        throw new RuntimeException('Payment could not be charged');
       }
 
       /*
@@ -260,15 +263,16 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $job->setPayload($payload);
 
     }
-    catch (RuntimeException $e) {
+    catch (\Throwable $e) {
       $submission = $this->paymentHelper->updateWebformSubmissionPaymentObject($webformSubmission, 'status', 'charge failed');
       $submission->save();
-      $this->logger->error($this->t('The submission #@serial failed (@message)', [
+      $this->logger->error($this->t('Error {@code} thrown while charging payment. Message: {@message}', [
         '@serial' => $webformSubmission->serial(),
+        '@code' => $e->getCode(),
         '@message' => $e->getMessage(),
       ]), $logger_context);
 
-      throw $e;
+      throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
     }
   }
 
