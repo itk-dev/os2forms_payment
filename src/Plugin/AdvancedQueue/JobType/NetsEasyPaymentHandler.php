@@ -255,6 +255,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $submission->save();
 
       $payload['processing_stage'] = 3;
+      unset($payload['checkoutUrl'], $payload['reservedAmount'], $payload['chargedAmount']);
 
       $job->setPayload($payload);
 
