@@ -2,7 +2,6 @@
 
 namespace Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType;
 
-use Drupal\advancedqueue\Annotation\AdvancedQueueJobType;
 use Drupal\Core\Logger\LoggerChannel;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\advancedqueue\Job;
