@@ -62,9 +62,6 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
    *
    * @return \Drupal\advancedqueue\JobResult
    *   The result of processing the job.
-   *
-   * @throws \Exception|GuzzleException
-   *   Throws Exception.
    */
   public function process(Job $job): JobResult {
 
@@ -170,7 +167,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
    * @param array $logger_context
    *   Context for logging.
    *
-   * @throws \Exception|GuzzleException
+   * @throws RuntimeException
    *   Throws Exception.
    */
   private function updatePaymentReference(Job $job, WebformSubmissionInterface $webformSubmission, array $logger_context): void {
