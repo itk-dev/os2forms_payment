@@ -100,11 +100,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       return JobResult::success();
     }
     catch (\Throwable $e) {
-      $this->logger->error($this->t('Error {@code} thrown while processing submission #@serial. Message: {@message}', [
-        '@serial' => $webformSubmission->serial(),
-        '@code' => $e->getCode(),
-        '@message' => $e->getMessage(),
-      ]), $logger_context);
+      $this->logger->error($e->getMessage(), $logger_context);
 
       return JobResult::failure($e->getMessage());
     }
@@ -158,11 +154,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
 
     }
     catch (\Throwable $e) {
-      $this->logger->error($this->t('Error {@code} thrown while getting payment. Message: {@message}', [
-        '@serial' => $webformSubmission->serial(),
-        '@code' => $e->getCode(),
-        '@message' => $e->getMessage(),
-      ]), $logger_context);
+      $this->logger->error($e->getMessage(), $logger_context);
 
       throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
     }
@@ -200,11 +192,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
 
     }
     catch (\Throwable $e) {
-      $this->logger->error($this->t('Error {@code} thrown while updating payment reference. Message: {@message}', [
-        '@serial' => $webformSubmission->serial(),
-        '@code' => $e->getCode(),
-        '@message' => $e->getMessage(),
-      ]), $logger_context);
+      $this->logger->error($e->getMessage(), $logger_context);
 
       throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
     }
@@ -266,11 +254,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
     catch (\Throwable $e) {
       $submission = $this->paymentHelper->updateWebformSubmissionPaymentObject($webformSubmission, 'status', 'charge failed');
       $submission->save();
-      $this->logger->error($this->t('Error {@code} thrown while charging payment. Message: {@message}', [
-        '@serial' => $webformSubmission->serial(),
-        '@code' => $e->getCode(),
-        '@message' => $e->getMessage(),
-      ]), $logger_context);
+      $this->logger->error($e->getMessage(), $logger_context);
 
       throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
     }
