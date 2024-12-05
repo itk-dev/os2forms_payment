@@ -2,8 +2,6 @@
 
 namespace Drupal\os2forms_payment\Helper;
 
-use Drupal\advancedqueue\Entity\Queue;
-use Drupal\advancedqueue\Job;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Logger\LoggerChannel;
@@ -11,13 +9,14 @@ use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\TempStore\PrivateTempStore;
 use Drupal\Core\TempStore\PrivateTempStoreFactory;
+use Drupal\advancedqueue\Entity\Queue;
+use Drupal\advancedqueue\Job;
 use Drupal\os2forms_payment\Exception\Exception;
 use Drupal\os2forms_payment\Exception\RuntimeException;
 use Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType\NetsEasyPaymentHandler;
 use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
 use Drupal\webform\WebformSubmissionInterface;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -264,14 +263,7 @@ class PaymentHelper {
     }
 
     $paymentEndpoint = $this->getPaymentEndpoint($paymentId);
-
-      try {
-          $response = $this->handleApiRequest('GET', $paymentEndpoint);
-      } catch (RuntimeException $e) {
-      } catch (GuzzleException $e) {
-      }
-
-    $result = $this->getResponseObject($response);
+    $result = $this->handleApiRequest('GET', $paymentEndpoint);
 
     $amountToPay = floatval($this->getAmountToPayTemp() * 100);
     $reservedAmount = floatval($result->payment->summary->reservedAmount ?? 0);
@@ -463,13 +455,13 @@ class PaymentHelper {
       return $this->getResponseObject($response);
     }
     catch (\Throwable $e) {
-      $this->logger->error($this->t('Error {@code} thrown by api request to {@endpoint}. Message: {@message}', [
+      $this->logger->error($this->t('Error {code} thrown by api request to {endpoint}. Message: {message}', [
         '@endpoint' => $endpoint,
         '@code' => $e->getCode(),
         '@message' => $e->getMessage(),
       ]));
 
-      throw new RuntimeException("Request to {$endpoint} failed.", $e->getCode(), $e);
+      throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
     }
 
   }
