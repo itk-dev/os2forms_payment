@@ -2,6 +2,7 @@
 
 namespace Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType;
 
+use Drupal\advancedqueue\Annotation\AdvancedQueueJobType;
 use Drupal\Core\Logger\LoggerChannel;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\advancedqueue\Job;
@@ -13,7 +14,6 @@ use Drupal\os2forms_payment\Helper\PaymentHelper;
 use Drupal\webform\Entity\WebformSubmission;
 use Drupal\webform\WebformSubmissionInterface;
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -113,7 +113,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
    * @param array $logger_context
    *   Context for logging.
    *
-   * @throws RuntimeException
+   * @throws \Drupal\os2forms_payment\Exception\RuntimeException
    *   Throws Exception.
    */
   private function getPaymentAndSetRelevantValues(Job $job, WebformSubmissionInterface $webformSubmission, array $logger_context): void {
@@ -167,7 +167,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
    * @param array $logger_context
    *   Context for logging.
    *
-   * @throws RuntimeException
+   * @throws \Drupal\os2forms_payment\Exception\RuntimeException
    *   Throws Exception.
    */
   private function updatePaymentReference(Job $job, WebformSubmissionInterface $webformSubmission, array $logger_context): void {
