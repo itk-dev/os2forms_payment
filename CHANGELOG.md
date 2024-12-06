@@ -9,6 +9,15 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Updated
+
+- Modified posting field to become a suffix, for a more detailed order reference
+
+### Added
+
+- Added payment modification and charge as an advanced queue job
+- Added language settings
+
 ## [0.1.0] 2024-10-25
 
 ### Updated

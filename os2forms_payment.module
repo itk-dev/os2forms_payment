@@ -6,13 +6,18 @@
  */
 
 use Drupal\os2forms_payment\Helper\PaymentHelper;
+use Drupal\webform\WebformSubmissionInterface;
 
 /**
  * Webform submission presave hook.
- *
- * @return void
- *   Return
  */
 function os2forms_payment_webform_submission_presave(mixed $submission): void {
   Drupal::service(PaymentHelper::class)->webformSubmissionPresave($submission);
+}
+
+/**
+ * Implements hook_webform_submission_insert().
+ */
+function os2forms_payment_webform_submission_insert(WebformSubmissionInterface $submission): void {
+  Drupal::service(PaymentHelper::class)->webformSubmissionInsert($submission);
 }

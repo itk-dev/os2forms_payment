@@ -6,7 +6,7 @@ window.addEventListener("load", () => {
 });
 
 function initPaymentWindow(checkoutContainer, retried = false) {
-  const { checkoutKey, createPaymentUrl, paymentErrorMessage } = checkoutContainer.dataset;
+  const { checkoutKey, createPaymentUrl, paymentErrorMessage, checkoutLanguage = 'da-DK' } = checkoutContainer.dataset;
   const request = new XMLHttpRequest();
   request.open("POST", createPaymentUrl, true);
   request.onload = function () {
@@ -23,6 +23,7 @@ function initPaymentWindow(checkoutContainer, retried = false) {
     };
 
     const checkout = new Dibs.Checkout(checkoutOptions);
+    checkout.setLanguage(checkoutLanguage);
     checkout.on("payment-completed", function (payload) {
       const paymentIdCompleted = payload.paymentId;
       if (paymentId === paymentIdCompleted) {

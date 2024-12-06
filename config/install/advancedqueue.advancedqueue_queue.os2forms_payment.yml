@@ -1,0 +1,13 @@
+status: true
+dependencies:
+  enforced:
+    module:
+      - os2forms_payment
+id: os2forms_payment
+label: os2forms_payment
+backend: database
+backend_configuration:
+  lease_time: 300
+processor: daemon
+processing_time: 280
+locked: false

@@ -2,11 +2,18 @@
 
 namespace Drupal\os2forms_payment\Helper;
 
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Logger\LoggerChannel;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\TempStore\PrivateTempStore;
 use Drupal\Core\TempStore\PrivateTempStoreFactory;
+use Drupal\advancedqueue\Entity\Queue;
+use Drupal\advancedqueue\Job;
+use Drupal\os2forms_payment\Exception\Exception;
+use Drupal\os2forms_payment\Exception\RuntimeException;
+use Drupal\os2forms_payment\Plugin\AdvancedQueue\JobType\NetsEasyPaymentHandler;
 use Drupal\os2forms_payment\Plugin\WebformElement\NetsEasyPaymentElement;
 use Drupal\webform\WebformSubmissionInterface;
 use GuzzleHttp\ClientInterface;
@@ -19,7 +26,14 @@ use Symfony\Component\HttpFoundation\RequestStack;
 class PaymentHelper {
 
   use StringTranslationTrait;
+
   const AMOUNT_TO_PAY = 'AMOUNT_TO_PAY';
+  /**
+   * The ID of the queue.
+   *
+   * @var string
+   */
+  private string $queueId = 'os2forms_payment';
 
   /**
    * Private temp store.
@@ -34,6 +48,8 @@ class PaymentHelper {
   public function __construct(
     private readonly RequestStack $requestStack,
     private readonly ClientInterface $httpClient,
+    private readonly EntityTypeManagerInterface $entityTypeManager,
+    private readonly LoggerChannel $logger,
     PrivateTempStoreFactory $tempStore,
   ) {
     $this->privateTempStore = $tempStore->get('os2forms_payment');
@@ -45,19 +61,10 @@ class PaymentHelper {
    * @return void
    *   Return
    */
-  public function webformSubmissionPresave(WebFormSubmissionInterface $submission) {
-    $webformElements = $submission->getWebform()->getElementsDecodedAndFlattened();
-    $paymentElement = NULL;
-    $paymentElementMachineName = NULL;
-
-    foreach ($webformElements as $key => $webformElement) {
-      if ('os2forms_payment' === ($webformElement['#type'] ?? NULL)) {
-        $paymentElement = $webformElement;
-        $paymentElementMachineName = $key;
-        break;
-      }
-    }
-    if (NULL === $paymentElement) {
+  public function webformSubmissionPresave(WebFormSubmissionInterface $submission): void {
+    ['paymentElement' => $paymentElement, 'paymentElementMachineName' => $paymentElementMachineName] = $this->getWebformElementNames($submission);
+    $submissionData = $submission->getData();
+    if (!isset($paymentElement) && !isset($paymentElementMachineName)) {
       return;
     }
 
@@ -69,26 +76,149 @@ class PaymentHelper {
     $paymentReferenceField = $request->request->get('os2forms_payment_reference_field');
 
     /*
-     * The goal here is to store the payment_id, amount_to_pay and posting
+     * The goal here is to store the payment_id, amount_to_pay and status
      * as a JSON object in the os2forms_payment submission value.
      */
-    $submissionData = $submission->getData();
+
     $amountToPay = $this->getAmountToPay($submissionData, $paymentElement['#amount_to_pay']);
 
-    $paymentPosting = $paymentElement['#payment_posting'] ?? 'undefined';
+    if ($paymentReferenceField && $request && $amountToPay) {
 
-    if ($request && $amountToPay) {
-      $payment_object = [
-        'paymentObject' => [
-          'payment_id' => $paymentReferenceField,
-          'amount' => $amountToPay,
-          'posting' => $paymentPosting,
-        ],
-      ];
+      $this->updateWebformSubmissionPaymentObject($submission, NULL, NULL, [
+        'payment_id' => $paymentReferenceField,
+        'amount' => $amountToPay,
+        'status' => 'not charged',
+      ]);
 
-      $submission_data[$paymentElementMachineName] = json_encode($payment_object);
-      $submission->setData($submission_data);
     }
+  }
+
+  /**
+   * Updates the payment object in a webform submission.
+   *
+   * @param \Drupal\webform\WebformSubmissionInterface $webformSubmission
+   *   The webform submission to update.
+   * @param string|null $key
+   *   The key of the payment object to update.
+   * @param mixed|null $value
+   *   The value to set for the payment object key.
+   * @param array|null $paymentObject
+   *   The payment object to replace the existing with.
+   */
+  public function updateWebformSubmissionPaymentObject(WebformSubmissionInterface $webformSubmission, ?string $key = NULL, mixed $value = NULL, ?array $paymentObject = NULL): WebformSubmissionInterface {
+    $submissionData = $webformSubmission->getData();
+    $paymentElementMachineName = $this->findPaymentElementKey($webformSubmission);
+
+    if ($paymentElementMachineName !== NULL) {
+      if ($paymentObject !== NULL) {
+        $submissionData[$paymentElementMachineName] = json_encode(['paymentObject' => $paymentObject]);
+      }
+      elseif ($key !== NULL && $value !== NULL) {
+        $paymentData = json_decode($submissionData[$paymentElementMachineName], TRUE);
+        $paymentData['paymentObject'][$key] = $value;
+        $submissionData[$paymentElementMachineName] = json_encode($paymentData);
+      }
+      $webformSubmission->setData($submissionData);
+    }
+    return $webformSubmission;
+  }
+
+  /**
+   * Finds the payment element within a webform submission.
+   *
+   * @param \Drupal\webform\WebformSubmissionInterface $submission
+   *   The webform submission object.
+   *
+   * @return string|null
+   *   The key of the payment element if found, or NULL if not found.
+   */
+  private function findPaymentElementKey(WebformSubmissionInterface $submission): ?string {
+    $webformElements = $submission->getWebform()->getElementsDecodedAndFlattened();
+
+    foreach ($webformElements as $elementKey => $webformElement) {
+      if ('os2forms_payment' === ($webformElement['#type'] ?? NULL)) {
+        return $elementKey;
+      }
+    }
+    return NULL;
+  }
+
+  /**
+   * Retrieves webform element names from a webform submission.
+   *
+   * @param \Drupal\webform\WebformSubmissionInterface $submission
+   *   The webform submission.
+   *
+   * @return array
+   *   An array containing the payment element and its machine name.
+   */
+  private function getWebformElementNames(WebformSubmissionInterface $submission): array {
+    $webformElements = $submission->getWebform()->getElementsDecodedAndFlattened();
+
+    $paymentElement = NULL;
+    $paymentElementMachineName = NULL;
+
+    foreach ($webformElements as $key => $webformElement) {
+      if ('os2forms_payment' === ($webformElement['#type'] ?? NULL)) {
+        $paymentElement = $webformElement;
+        $paymentElementMachineName = $key;
+        break;
+      }
+    }
+
+    return [
+      'paymentElement' => $paymentElement,
+      'paymentElementMachineName' => $paymentElementMachineName,
+    ];
+  }
+
+  /**
+   * Hook on webform submission presave, modifying data before submission.
+   *
+   * @return void
+   *   Return
+   *
+   * @throws \Drupal\os2forms_payment\Exception\RuntimeException
+   *   Throws exception.
+   */
+  public function webformSubmissionInsert(WebFormSubmissionInterface $submission): void {
+    $logger_context = [
+      'handler_id' => 'os2forms_payment',
+      'channel' => 'webform_submission',
+      'webform_submission' => $submission,
+      'operation' => 'submission queued',
+    ];
+
+    /*
+     * The paymentReferenceField is not a part of the form submission,
+     * so we get it from the POST payload.
+     */
+    $request = $this->requestStack->getCurrentRequest();
+    $paymentId = $request->request->get('os2forms_payment_reference_field');
+
+    /** @var \Drupal\advancedqueue\Entity\Queue $queue */
+    $queue = $this->getQueue();
+    if (!$queue) {
+      throw new Exception(sprintf('Queue with ID %s does not exist.', $this->queueId));
+    }
+    $job = Job::create(NetsEasyPaymentHandler::class, [
+      'submissionId' => $submission->id(),
+      'paymentId' => $paymentId,
+    ]);
+    $queue->enqueueJob($job);
+
+    $this->logger->notice($this->t('Added submission #@serial to queue for processing', ['@serial' => $submission->serial()]), $logger_context);
+  }
+
+  /**
+   * Get queue.
+   */
+  private function getQueue(): ?Queue {
+    $queueStorage = $this->entityTypeManager->getStorage('advancedqueue_queue');
+    /** @var ?Queue $queue */
+    $queue = $queueStorage->load($this->queueId);
+
+    return $queue;
   }
 
   /**
@@ -132,115 +262,18 @@ class PaymentHelper {
       return;
     }
 
-    $paymentEndpoint = $this->getPaymentEndpoint() . $paymentId;
-
-    $response = $this->httpClient->request(
-      'GET',
-      $paymentEndpoint,
-      [
-        'headers' => [
-          'Content-Type' => 'application/json',
-          'Accept' => 'application/json',
-          'Authorization' => $this->getSecretKey(),
-        ],
-      ]
-    );
-    $result = $this->responseToObject($response);
+    $paymentEndpoint = $this->getPaymentEndpoint($paymentId);
+    $result = $this->handleApiRequest('GET', $paymentEndpoint);
 
     $amountToPay = floatval($this->getAmountToPayTemp() * 100);
     $reservedAmount = floatval($result->payment->summary->reservedAmount ?? 0);
-    $chargedAmount = floatval($result->payment->summary->chargedAmount ?? 0);
-
     if ($amountToPay !== $reservedAmount) {
       // Reserved amount mismatch.
       $formState->setError(
         $element,
         $this->t('Reserved amount mismatch')
       );
-      return;
     }
-
-    if ($reservedAmount > 0 && $chargedAmount == 0) {
-      // Payment is reserved, but not yet charged.
-      $paymentChargeId = $this->chargePayment($paymentEndpoint, $reservedAmount);
-      if (!$paymentChargeId) {
-        $formState->setError(
-          $element,
-          $this->t('Payment was not charged')
-        );
-        return;
-      }
-
-      /*
-      Right after charging the amount, the charge is validated via another
-      endpoint. Even though the charge is confirmed previously, due to
-      timing, the charge confirmation endpoint may return a 404 error.
-
-      Therefore, it is wrapped in a try/catch to allow it to pass,
-      even when it fails, essentially letting this serve as an optional check.
-       */
-      try {
-        $chargeEndpoint = $this->getChargeEndpoint() . $paymentChargeId;
-        $response = $this->httpClient->request(
-          'GET',
-          $chargeEndpoint,
-          [
-            'headers' => [
-              'Authorization' => $this->getSecretKey(),
-            ],
-          ]
-        );
-
-        $result = $this->responseToObject($response);
-
-        $chargedAmountValidated = floatval($result->amount);
-
-        if ($reservedAmount !== $chargedAmountValidated) {
-          // Payment amount mismatch.
-          $formState->setError(
-            $element,
-            $this->t('Payment amount mismatch')
-          );
-          return;
-        }
-      }
-      catch (\Exception $e) {
-      }
-    }
-  }
-
-  /**
-   * Charges a given payment via the Nets Payment API.
-   *
-   * @param string $endpoint
-   *   Nets Payment API endpoint.
-   * @param float $reservedAmount
-   *   The reserved amount to be charged.
-   *
-   * @return string
-   *   Returns charge id.
-   */
-  private function chargePayment($endpoint, $reservedAmount) {
-    $endpoint = $endpoint . '/charges';
-
-    $response = $this->httpClient->request(
-      'POST',
-      $endpoint,
-      [
-        'headers' => [
-          'Content-Type' => 'application/json',
-          'Accept' => 'application/json',
-          'Authorization' => $this->getSecretKey(),
-        ],
-        'json' => [
-          'amount' => $reservedAmount,
-        ],
-
-      ]
-    );
-
-    $result = $this->responseToObject($response);
-    return $result->chargeId;
   }
 
   /**
@@ -294,37 +327,75 @@ class PaymentHelper {
   }
 
   /**
-   * Returns the Nets API payment endpoint.
+   * Returns the base URL based on the test mode setting.
    *
    * @return string
-   *   The endpoint URL.
+   *   The base URL for API requests.
    */
-  public function getPaymentEndpoint(): string {
+  public function getBaseUrl(): string {
     return $this->getTestMode()
-      ? 'https://test.api.dibspayment.eu/v1/payments/'
-      : 'https://api.dibspayment.eu/v1/payments/';
+      ? 'https://test.api.dibspayment.eu/'
+      : 'https://api.dibspayment.eu/';
   }
 
   /**
-   * Returns the Nets API charge endpoint.
+   * Returns the Nets API update endpoint.
    *
    * @return string
    *   The endpoint URL.
    */
-  public function getChargeEndpoint(): string {
+  public function getUpdateReferenceInformationEndpoint(string $paymentId): string {
+    return $this->getBaseUrl() . "v1/payments/{$paymentId}/referenceinformation";
+  }
+
+  /**
+   * Returns the Nets API create payment endpoint.
+   *
+   * @return string
+   *   The endpoint URL.
+   */
+  public function getCreatePaymentEndpoint(): string {
+    return $this->getBaseUrl() . 'v1/payments/';
+  }
+
+  /**
+   * Returns the Nets API retrieve payment endpoint.
+   *
+   * @return string
+   *   The endpoint URL.
+   */
+  public function getPaymentEndpoint(string $paymentId): string {
     return $this->getTestMode()
-      ? 'https://test.api.dibspayment.eu/v1/charges/'
-      : 'https://api.dibspayment.eu/v1/charges/';
+      ? 'https://test.api.dibspayment.eu/v1/payments/' . $paymentId
+      : 'https://api.dibspayment.eu/v1/payments/' . $paymentId;
+  }
+
+  /**
+   * Returns the Nets API payment charge endpoint.
+   *
+   * @return string
+   *   The endpoint URL.
+   */
+  public function getChargePaymentEndpoint(string $paymentId): string {
+    return $this->getTestMode()
+      ? 'https://test.api.dibspayment.eu/v1/payments/' . $paymentId . '/charges'
+      : 'https://api.dibspayment.eu/v1/payments/' . $paymentId . '/charges';
   }
 
   /**
    * Converts a JSON response to an object.
    *
-   * @return object
+   * @return object|null
    *   The response object.
    */
-  public function responseToObject(ResponseInterface $response): object {
-    return json_decode($response->getBody()->getContents());
+  public function getResponseObject(ResponseInterface $response): ?object {
+    $contents = $response->getBody()->getContents();
+
+    if (empty($contents)) {
+      return NULL;
+    }
+
+    return json_decode($contents);
   }
 
   /**
@@ -348,6 +419,51 @@ class PaymentHelper {
    */
   public function getAmountToPayTemp(): float {
     return $this->privateTempStore->get(self::AMOUNT_TO_PAY);
+  }
+
+  /**
+   * Handles an API request.
+   *
+   * @param string $method
+   *   The HTTP method for the request.
+   * @param string $endpoint
+   *   The endpoint URL.
+   * @param array $params
+   *   Optional. An associative array of parameters
+   *   to be sent in the request body.
+   *
+   * @return object|null
+   *   The response object returned from the API endpoint if present.
+   *
+   * @throws \Drupal\os2forms_payment\Exception\RuntimeException|\GuzzleHttp\Exception\GuzzleException
+   *   Throws exception.
+   */
+  public function handleApiRequest(string $method, string $endpoint, array $params = []): ?object {
+    $headers = [
+      'Content-Type' => 'application/json',
+      'Accept' => 'application/json',
+      'Authorization' => $this->getSecretKey(),
+    ];
+
+    try {
+      $response = $this->httpClient->request(
+        $method,
+        $endpoint,
+        ['headers' => $headers, 'json' => $params]
+      );
+
+      return $this->getResponseObject($response);
+    }
+    catch (\Throwable $e) {
+      $this->logger->error($this->t('Error {code} thrown by api request to {endpoint}. Message: {message}', [
+        '@endpoint' => $endpoint,
+        '@code' => $e->getCode(),
+        '@message' => $e->getMessage(),
+      ]));
+
+      throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+    }
+
   }
 
 }
