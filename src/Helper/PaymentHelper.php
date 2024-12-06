@@ -62,11 +62,15 @@ class PaymentHelper {
    *   Return
    */
   public function webformSubmissionPresave(WebFormSubmissionInterface $submission): void {
+
+    // Only modify submission if payment element exists.
     ['paymentElement' => $paymentElement, 'paymentElementMachineName' => $paymentElementMachineName] = $this->getWebformElementNames($submission);
-    $submissionData = $submission->getData();
+
     if (!isset($paymentElement) && !isset($paymentElementMachineName)) {
       return;
     }
+
+    $submissionData = $submission->getData();
 
     /*
      * The paymentReferenceField is not a part of the form submission,
@@ -182,6 +186,14 @@ class PaymentHelper {
    *   Throws exception.
    */
   public function webformSubmissionInsert(WebFormSubmissionInterface $submission): void {
+
+    // Only modify submission if payment element exists.
+    ['paymentElement' => $paymentElement, 'paymentElementMachineName' => $paymentElementMachineName] = $this->getWebformElementNames($submission);
+
+    if (!isset($paymentElement) && !isset($paymentElementMachineName)) {
+      return;
+    }
+
     $logger_context = [
       'handler_id' => 'os2forms_payment',
       'channel' => 'webform_submission',

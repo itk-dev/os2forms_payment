@@ -9,6 +9,10 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Added payment element check in implementation of hook_webform_submission_insert.
+
 ## [1.0.0] - 2024-12-06
 
 ### Updated
