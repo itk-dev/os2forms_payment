@@ -9,6 +9,10 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- User definable terms and condition urls
+
 ## [1.0.1] - 2024-12-06
 
 ### Added
