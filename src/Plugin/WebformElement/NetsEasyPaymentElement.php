@@ -99,11 +99,13 @@ class NetsEasyPaymentElement extends WebformElementBase {
       '#type' => 'textfield',
       '#title' => $this->t('Terms and conditions URL'),
       '#description' => $this->t('The complete URL to the terms and conditions, including the protocol. Example: https://www.example.com/terms-and-conditions'),
+      '#required' => TRUE,
     ];
     $form['element']['merchant_terms_url'] = [
       '#type' => 'textfield',
       '#title' => $this->t('The merchant terms URL'),
       '#description' => $this->t('The complete URL to the merchant terms, including the protocol. Example: https://www.example.com/merchant-terms'),
+      '#required' => TRUE,
     ];
 
     $form['element']['payment_posting'] = [
@@ -119,6 +121,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
         'Card' => $this->t('Kortbetaling'),
         'MobilePay' => $this->t('MobilePay'),
       ],
+      '#required' => TRUE,
     ];
 
     return $form;
