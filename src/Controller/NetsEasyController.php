@@ -56,6 +56,8 @@ class NetsEasyController extends ControllerBase {
     $callbackUrl = $request->get('callbackUrl');
     $paymentPosting = $request->get('paymentPosting');
     $paymentMethods = $request->get('paymentMethods');
+    $termsAndConditionsUrl = $request->get('termsAndConditionsUrl');
+    $merchantTermsUrl = $request->get('merchantTermsUrl');
 
     $paymentMethodsConfiguration = array_map(
       static fn($name) => ['name' => $name, 'enabled' => TRUE],
@@ -71,8 +73,8 @@ class NetsEasyController extends ControllerBase {
       'checkout' => [
         'integrationType' => 'EmbeddedCheckout',
         'url' => $callbackUrl,
-        'termsUrl' => $this->paymentHelper->getTermsUrl(),
-        'merchantTermsUrl' => $this->paymentHelper->getTermsUrl(),
+        'termsUrl' => $termsAndConditionsUrl,
+        'merchantTermsUrl' => $merchantTermsUrl,
         'merchantHandlesConsumerData' => TRUE,
         'publicDevice' => TRUE,
         'shipping' => [
