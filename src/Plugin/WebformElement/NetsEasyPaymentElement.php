@@ -51,6 +51,8 @@ class NetsEasyPaymentElement extends WebformElementBase {
       'checkout_language' => [],
       'amount_to_pay' => '',
       'checkout_page_description' => '',
+      'terms_and_conditions_url' => $this->paymentHelper->getTermsUrl(),
+      'merchant_terms_url' => $this->paymentHelper->getMerchantTermsUrl(),
       'payment_methods' => ['Card'],
       'payment_posting' => '',
     ] + parent::defineDefaultProperties();
@@ -93,6 +95,16 @@ class NetsEasyPaymentElement extends WebformElementBase {
       '#description' => $this
         ->t('This field supports simple html'),
     ];
+    $form['element']['terms_and_conditions_url'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Terms and conditions URL'),
+      '#description' => $this->t('The complete URL to the terms and conditions, including the protocol. Example: https://www.example.com/terms-and-conditions'),
+    ];
+    $form['element']['merchant_terms_url'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('The merchant terms URL'),
+      '#description' => $this->t('The complete URL to the merchant terms, including the protocol. Example: https://www.example.com/merchant-terms'),
+    ];
 
     $form['element']['payment_posting'] = [
       '#type' => 'textfield',
@@ -131,7 +143,8 @@ class NetsEasyPaymentElement extends WebformElementBase {
       ? 'os2forms_payment/nets_easy_test'
       : 'os2forms_payment/nets_easy_prod';
     $callbackUrl = Url::fromRoute('<current>')->setAbsolute()->toString(TRUE)->getGeneratedUrl();
-    $webformCurrentPage = $form['progress']['#current_page'];
+
+    $webformCurrentPage = $formState->get('current_page');
     // Check if we are on the preview page.
     if ($webformCurrentPage === "webform_preview") {
       $amountToPay = $this->paymentHelper->getAmountToPay($formState->getUserInput(), $this->getElementProperty($element, 'amount_to_pay'));
@@ -147,6 +160,9 @@ class NetsEasyPaymentElement extends WebformElementBase {
       $paymentMethods = array_values(array_filter($element['#payment_methods'] ?? []));
       $paymentPosting = $element['#payment_posting'] ?? 'undefined';
       $checkoutLanguage = $element['#checkout_language'] ?? 'da-DK';
+      $termsAndConditionsUrl = $element['#terms_and_conditions_url'] ?? '';
+      $merchantTermsUrl = $element['#merchant_terms_url'] ?? '';
+
 
       $form['os2forms_payment_checkout_container'] = [
         '#type' => 'container',
@@ -161,6 +177,8 @@ class NetsEasyPaymentElement extends WebformElementBase {
               'callbackUrl' => $callbackUrl,
               'paymentMethods' => $paymentMethods,
               'paymentPosting' => $paymentPosting,
+              'termsAndConditionsUrl' => $termsAndConditionsUrl,
+              'merchantTermsUrl' => $merchantTermsUrl,
             ])->toString(TRUE)->getGeneratedUrl(),
         ],
         '#limit_validation_errors' => [],
