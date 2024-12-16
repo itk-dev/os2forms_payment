@@ -163,7 +163,6 @@ class NetsEasyPaymentElement extends WebformElementBase {
       $termsAndConditionsUrl = $element['#terms_and_conditions_url'] ?? '';
       $merchantTermsUrl = $element['#merchant_terms_url'] ?? '';
 
-
       $form['os2forms_payment_checkout_container'] = [
         '#type' => 'container',
         '#attributes' => [
