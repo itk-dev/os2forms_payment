@@ -16,8 +16,11 @@ $settings['os2forms_payment']['checkout_key'] = '';
 // SECRET_KEY, both test and production, can be retrieved from Nets admin panel
 $settings['os2forms_payment']['secret_key'] = '';
 
-// Static page containing terms and conditions, e.g. /node/87
+// Page containing terms and conditions URL, including protocol.
 $settings['os2forms_payment']['terms_url'] = '';
+
+// Page containing merchant terms URL, including protocol.
+$settings['os2forms_payment']['merchant_terms_url'] = '';
 
 // Boolean describing whether the module is operated in test mode
 $settings['os2forms_payment']['test_mode'] = TRUE;
