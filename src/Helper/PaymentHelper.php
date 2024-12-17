@@ -329,6 +329,16 @@ class PaymentHelper {
   }
 
   /**
+   * Returns the url for the page displaying merchant terms and conditions.
+   *
+   * @return string
+   *   The merchant terms and conditions url.
+   */
+  public function getMerchantTermsUrl(): ?string {
+    return $this->getPaymentSettings()['merchant_terms_url'] ?? NULL;
+  }
+
+  /**
    * Returns whether the module is operated in test mode.
    *
    * @return bool
