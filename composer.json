@@ -19,6 +19,7 @@
     ],
     "require": {
         "php": "^8.1",
+        "drupal/advancedqueue": "^1.0",
         "drupal/webform": "^6.1",
         "drush/drush": "^11 || ^12",
         "symfony/options-resolver": "^5.4 || ^6.0"
