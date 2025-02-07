@@ -325,7 +325,7 @@ class PaymentHelper {
    *   The terms and conditions url.
    */
   public function getTermsUrl(): ?string {
-    return $this->getPaymentSettings()['terms_url'] ?? NULL;
+    return $this->getPaymentSettings()['terms_and_conditions_url'] ?? NULL;
   }
 
   /**
