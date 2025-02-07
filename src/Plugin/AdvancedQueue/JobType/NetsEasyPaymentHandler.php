@@ -27,6 +27,19 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
 
   /**
    * {@inheritdoc}
+   *
+   * @param array<mixed> $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin ID for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
+   * @param \Drupal\Core\Logger\LoggerChannel $logger
+   *   The logger.
+   * @param \GuzzleHttp\Client $httpClient
+   *   The client.
+   * @param \Drupal\os2forms_payment\Helper\PaymentHelper $paymentHelper
+   *   The payment helper.
    */
   public function __construct(
     array $configuration,
@@ -41,6 +54,15 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
 
   /**
    * {@inheritdoc}
+   *
+   * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
+   *   The container to pull out services used in the plugin.
+   * @param array<mixed> $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin ID for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new NetsEasyPaymentHandler(
@@ -67,7 +89,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
     $payload = $job->getPayload();
     $stage = $payload['processing_stage'] ?? 0;
 
-    /** @var \Drupal\webform\Entity\WebformSubmissionInterface $webformSubmission */
+    /** @var \Drupal\webform\WebformSubmissionInterface $webformSubmission */
     $webformSubmission = WebformSubmission::load($payload['submissionId']);
 
     $logger_context = [
@@ -107,9 +129,9 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
    *
    * @param \Drupal\advancedqueue\Job $job
    *   The job object containing payload information.
-   * @param \Drupal\webform\Entity\WebformSubmissionInterface $webformSubmission
+   * @param \Drupal\webform\WebformSubmissionInterface $webformSubmission
    *   The webform submission related to the payment.
-   * @param array $logger_context
+   * @param array<mixed> $logger_context
    *   Context for logging.
    *
    * @throws \Drupal\os2forms_payment\Exception\RuntimeException
@@ -161,9 +183,9 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
    *
    * @param \Drupal\advancedqueue\Job $job
    *   The job object containing payload information.
-   * @param \Drupal\webform\Entity\WebformSubmissionInterface $webformSubmission
+   * @param \Drupal\webform\WebformSubmissionInterface $webformSubmission
    *   The webform submission related to the payment.
-   * @param array $logger_context
+   * @param array<mixed> $logger_context
    *   Context for logging.
    *
    * @throws \Drupal\os2forms_payment\Exception\RuntimeException
@@ -199,9 +221,9 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
    *
    * @param \Drupal\advancedqueue\Job $job
    *   The job object containing payload information.
-   * @param \Drupal\webform\Entity\WebformSubmissionInterface $webformSubmission
+   * @param \Drupal\webform\WebformSubmissionInterface $webformSubmission
    *   The webform submission related to the payment.
-   * @param array $logger_context
+   * @param array<mixed> $logger_context
    *   Context for logging.
    *
    * @throws \Exception
@@ -259,7 +281,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
   /**
    * Validates the reservation and charge amounts.
    *
-   * @param array $payload
+   * @param array<mixed> $payload
    *   The payload data containing reserved and charged amounts.
    *
    * @throws \Exception

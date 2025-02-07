@@ -2,14 +2,14 @@
 
 namespace Drupal\os2forms_payment\Element;
 
-use Drupal\Core\Render\Element\FormElement;
+use Drupal\Core\Render\Element\FormElementBase;
 
 /**
  * Provides an OS2forms payment element'.
  *
  * @FormElement("os2forms_payment_nets_easy_payment")
  */
-class NetsEasyPaymentElement extends FormElement {
+class NetsEasyPaymentElement extends FormElementBase {
 
   /**
    * {@inheritdoc}

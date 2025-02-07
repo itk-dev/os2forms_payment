@@ -9,6 +9,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Update `terms_and_conditions_url` settings key.
+
 ## [1.1.0] - 2024-12-17
 
 ### Added

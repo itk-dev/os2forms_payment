@@ -106,7 +106,7 @@ class PaymentHelper {
    *   The key of the payment object to update.
    * @param mixed|null $value
    *   The value to set for the payment object key.
-   * @param array|null $paymentObject
+   * @param array<mixed>|null $paymentObject
    *   The payment object to replace the existing with.
    */
   public function updateWebformSubmissionPaymentObject(WebformSubmissionInterface $webformSubmission, ?string $key = NULL, mixed $value = NULL, ?array $paymentObject = NULL): WebformSubmissionInterface {
@@ -153,7 +153,7 @@ class PaymentHelper {
    * @param \Drupal\webform\WebformSubmissionInterface $submission
    *   The webform submission.
    *
-   * @return array
+   * @return array<string, mixed>
    *   An array containing the payment element and its machine name.
    */
   private function getWebformElementNames(WebformSubmissionInterface $submission): array {
@@ -208,9 +208,9 @@ class PaymentHelper {
     $request = $this->requestStack->getCurrentRequest();
     $paymentId = $request->request->get('os2forms_payment_reference_field');
 
-    /** @var \Drupal\advancedqueue\Entity\Queue $queue */
+    /** @var \Drupal\advancedqueue\Entity\Queue|NULL $queue */
     $queue = $this->getQueue();
-    if (!$queue) {
+    if (is_null($queue)) {
       throw new Exception(sprintf('Queue with ID %s does not exist.', $this->queueId));
     }
     $job = Job::create(NetsEasyPaymentHandler::class, [
@@ -325,7 +325,7 @@ class PaymentHelper {
    *   The terms and conditions url.
    */
   public function getTermsUrl(): ?string {
-    return $this->getPaymentSettings()['terms_url'] ?? NULL;
+    return $this->getPaymentSettings()['terms_and_conditions_url'] ?? NULL;
   }
 
   /**
@@ -450,7 +450,7 @@ class PaymentHelper {
    *   The HTTP method for the request.
    * @param string $endpoint
    *   The endpoint URL.
-   * @param array $params
+   * @param array<mixed> $params
    *   Optional. An associative array of parameters
    *   to be sent in the request body.
    *
