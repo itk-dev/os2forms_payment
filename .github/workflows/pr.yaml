@@ -136,7 +136,7 @@ jobs:
           composer code-analysis
 
   markdown-coding-standards:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     name: Markdown coding standards
     steps:
       - name: Checkout
@@ -155,7 +155,7 @@ jobs:
       - name: Yarn install
         uses: actions/setup-node@v2
         with:
-          node-version: '16'
+          node-version: '22'
       - run: yarn install
       - name: coding-standards-check
         run: yarn coding-standards-check

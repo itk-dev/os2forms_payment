@@ -9,6 +9,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Updated GitHub workflow images.
+
 ## [1.1.1] - 2025-02-07
 
 - Update `terms_and_conditions_url` settings key.
