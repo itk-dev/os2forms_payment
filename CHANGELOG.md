@@ -9,6 +9,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Update submit click selector.
 - Updated GitHub workflow images.
 
 ## [1.1.1] - 2025-02-07
