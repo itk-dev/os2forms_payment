@@ -30,7 +30,7 @@ function initPaymentWindow(checkoutContainer, retried = false) {
         document.querySelector(
           "input[name='os2forms_payment_reference_field']"
         ).value = paymentIdCompleted;
-        document.getElementById("edit-submit").click();
+        document.querySelector(".webform-button--submit").click();
       } else {
         alert(paymentErrorMessage)
       }
