@@ -271,6 +271,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
       'textfield',
       'hidden',
       'select',
+      'webform_computed_twig',
     ];
     $elements = array_filter(
       $elements,
