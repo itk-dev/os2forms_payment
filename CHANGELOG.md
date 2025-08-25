@@ -9,6 +9,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Added computed twig as payment value option.
+
 ## [1.1.2] - 2025-03-03
 
 - Update submit click selector.
