@@ -61,7 +61,7 @@ class PaymentHelper {
    * @return void
    *   Return
    */
-  public function webformSubmissionPresave(WebFormSubmissionInterface $submission): void {
+  public function webformSubmissionPresave(WebformSubmissionInterface $submission): void {
 
     // Only modify submission if payment element exists.
     ['paymentElement' => $paymentElement, 'paymentElementMachineName' => $paymentElementMachineName] = $this->getWebformElementNames($submission);
@@ -185,7 +185,7 @@ class PaymentHelper {
    * @throws \Drupal\os2forms_payment\Exception\RuntimeException
    *   Throws exception.
    */
-  public function webformSubmissionInsert(WebFormSubmissionInterface $submission): void {
+  public function webformSubmissionInsert(WebformSubmissionInterface $submission): void {
 
     // Only modify submission if payment element exists.
     ['paymentElement' => $paymentElement, 'paymentElementMachineName' => $paymentElementMachineName] = $this->getWebformElementNames($submission);

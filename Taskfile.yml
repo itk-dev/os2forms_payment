@@ -1,0 +1,133 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  default:
+    cmd: task --list-all
+    silent: true
+
+  ddev:
+    desc: "Run DDEV command"
+    cmd: ddev {{.TASK_ARGS}} {{.CLI_ARGS}}
+    internal: true
+
+  coding-standards:apply:
+    desc: "Apply coding standards"
+    cmds:
+      - task: coding-standards:composer:apply
+      - task: coding-standards:markdown:apply
+      - task: coding-standards:php:apply
+      - task: coding-standards:yaml:apply
+
+  coding-standards:check:
+    desc: "Check coding standards"
+    cmds:
+      - task: coding-standards:composer:check
+      - task: coding-standards:markdown:check
+      - task: coding-standards:php:check
+      - task: coding-standards:yaml:check
+
+  coding-standards:composer:apply:
+    desc: "Apply coding standards for composer"
+    cmds:
+      - task: ddev
+        vars:
+          TASK_ARGS: composer normalize
+
+  coding-standards:composer:check:
+    - task: coding-standards:composer:apply
+    - task: ddev
+      vars:
+        TASK_ARGS: composer normalize --dry-run
+    - task: ddev
+      vars:
+        TASK_ARGS: composer validate
+
+  coding-standards:markdown:apply:
+    desc: "Apply coding standards for Markdown"
+    cmds:
+      # Cf. .github/workflows/markdown.yaml
+      - docker compose run --rm markdownlint markdownlint '**/*.md' --fix
+
+  coding-standards:markdown:check:
+    desc: "Apply and check coding standards for Markdown"
+    cmds:
+      - task: coding-standards:markdown:apply
+      # Cf. .github/workflows/markdown.yaml
+      - docker compose run --rm markdownlint markdownlint '**/*.md'
+
+  coding-standards:php:apply:
+    desc: "Apply coding standards for PHP"
+    cmds:
+      # Cf. .github/workflows/php.yaml
+      - task: ddev
+        vars:
+          TASK_ARGS: phpcbf
+
+  coding-standards:php:check:
+    desc: "Apply and check coding standards for PHP"
+    cmds:
+      - task: coding-standards:php:apply
+      # Cf. .github/workflows/php.yaml
+      - task: ddev
+        vars:
+          TASK_ARGS: phpcs
+
+  coding-standards:yaml:apply:
+    desc: "Apply coding standards for YAML"
+    cmds:
+      # Cf. .github/workflows/yaml.yaml
+      - docker compose run --rm prettier '**/*.{yml,yaml}' --write
+
+  coding-standards:yaml:check:
+    desc: "Apply coding standards for YAML"
+    cmds:
+      - task: coding-standards:yaml:apply
+      # Cf. .github/workflows/yaml.yaml
+      - docker compose run --rm prettier '**/*.{yml,yaml}' --check
+
+  code-analysis:
+    desc: "Run static code analysis"
+    cmds:
+      - task: code-analysis:rector
+      - task: code-analysis:phpstan
+
+  code-analysis:phpstan:
+    desc: "Run PHPStan"
+    cmds:
+      - task: ddev
+        vars:
+          TASK_ARGS: phpstan
+
+  code-analysis:rector:
+    desc: "Run rector"
+    cmds:
+      - task: ddev
+        vars:
+          TASK_ARGS: php vendor/bin/rector
+
+  ddev:start:
+    desc: Start DDEV setup (https://github.com/ddev/ddev-drupal-contrib)
+    # https://github.com/ddev/ddev-drupal-contrib
+    cmds:
+      - ddev add-on get ddev/ddev-drupal-contrib
+      - ddev restart
+      - task: composer:install:lenient
+      # @todo Remove --no-security-blocking when possible.
+      - ddev poser --no-interaction --no-security-blocking
+      - ddev symlink-project
+      # Detect expected Drupal and PHP versions.
+      - ddev config --update
+
+  composer:install:lenient:
+    cmds:
+      # Create a temporary composer file to install https://github.com/mglaman/composer-drupal-lenient before the real install needs it.
+      - for:
+          - init --no-interaction
+          - config --no-plugins allow-plugins.mglaman/composer-drupal-lenient true
+          - require mglaman/composer-drupal-lenient:^1.0
+        cmd: ddev exec -- COMPOSER=composer.lenient.json composer {{.ITEM}}
+      # Clean up
+      - rm -f composer.lenient.*
+    internal: true

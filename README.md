@@ -38,19 +38,21 @@ Make sure that the setting values described above are set.
 amount to pay (field types: Skjult, Vælg).
 5. Test the form. The Nets gateway should appear on the Review page.
 
-## Coding standards
+## Development
 
-```sh
-docker run --rm --interactive --tty --volume ${PWD}:/app itkdev/php8.3-fpm:latest composer install
-docker run --rm --interactive --tty --volume ${PWD}:/app itkdev/php8.3-fpm:latest composer coding-standards-check
+We use [DDEV Drupal Contrib](https://github.com/ddev/ddev-drupal-contrib) for development[^1].
 
-docker run --rm --interactive --tty --volume ${PWD}:/app node:20 yarn --cwd /app install
-docker run --rm --interactive --tty --volume ${PWD}:/app node:20 yarn --cwd /app coding-standards-check
+[^1]: The DDEV environment has been created by running
+
+      ```shell
+      ddev config --project-type=drupal11 --docroot=web
+      ddev dotenv set .ddev/.env.web --drupal-core '^11.4.10'
+      ```
+
+Start the show by running
+
+```shell
+task ddev:start
 ```
 
-## Code analysis
-
-```sh
-docker run --rm --interactive --tty --volume ${PWD}:/app itkdev/php8.3-fpm:latest composer install
-docker run --rm --interactive --tty --volume ${PWD}:/app itkdev/php8.3-fpm:latest composer code-analysis
-```
+Run `task` to see other useful development tasks.

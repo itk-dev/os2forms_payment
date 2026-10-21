@@ -1,14 +1,14 @@
 services:
   logger.channel.os2forms_payment:
     parent: logger.channel_base
-    arguments: [ 'os2forms_payment' ]
+    arguments: ["os2forms_payment"]
 
   Drupal\os2forms_payment\Helper\PaymentHelper:
     autowire: true
     arguments:
-      $logger: '@logger.channel.os2forms_payment'
+      $logger: "@logger.channel.os2forms_payment"
 
   Drupal\os2forms_payment\Controller\NetsEasyController:
     autowire: true
     arguments:
-      $httpClient: '@http_client'
+      $httpClient: "@http_client"

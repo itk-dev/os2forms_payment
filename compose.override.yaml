@@ -1,0 +1,4 @@
+services:
+  phpfpm:
+    # OS2Forms is not yet ready for PHP 8.4 (!)
+    image: itkdev/php8.3-fpm:latest

@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Returns responses for OS2forms payment routes.
  */
-class NetsEasyController extends ControllerBase {
+final class NetsEasyController extends ControllerBase {
 
   /**
    * Constructor.
@@ -50,14 +50,14 @@ class NetsEasyController extends ControllerBase {
    *   Returns response containing paymentId from Nets endpoint.
    */
   public function createPayment(Request $request): Response {
-    $amountToPay = floatval($request->get('amountToPay'));
+    $amountToPay = floatval($request->query->get('amountToPay'));
     // Amount to pay is defined in the lowest monetary unit.
     $amountToPay *= 100;
-    $callbackUrl = $request->get('callbackUrl');
-    $paymentPosting = $request->get('paymentPosting');
-    $paymentMethods = $request->get('paymentMethods');
-    $termsAndConditionsUrl = $request->get('termsAndConditionsUrl');
-    $merchantTermsUrl = $request->get('merchantTermsUrl');
+    $callbackUrl = $request->query->get('callbackUrl');
+    $paymentPosting = $request->query->get('paymentPosting');
+    $paymentMethods = $request->query->all('paymentMethods');
+    $termsAndConditionsUrl = $request->query->get('termsAndConditionsUrl');
+    $merchantTermsUrl = $request->query->get('merchantTermsUrl');
 
     $paymentMethodsConfiguration = array_map(
       static fn($name) => ['name' => $name, 'enabled' => TRUE],

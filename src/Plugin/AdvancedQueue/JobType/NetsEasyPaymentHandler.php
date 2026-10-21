@@ -71,7 +71,7 @@ final class NetsEasyPaymentHandler extends JobTypeBase implements ContainerFacto
       $plugin_definition,
       $container->get('logger.channel.os2forms_payment'),
       $container->get('http_client'),
-      $container->get('Drupal\os2forms_payment\Helper\PaymentHelper'),
+      $container->get(PaymentHelper::class),
     );
   }
 

@@ -1,0 +1,43 @@
+name: Project
+
+env:
+  COMPOSE_USER: runner
+  # https://getcomposer.org/doc/03-cli.md#composer-auth
+  COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GITHUB_TOKEN }}"} }'
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  php:
+    name: PHP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: go-task/setup-task@v1
+      # https://github.com/ddev/github-action-setup-ddev
+      - uses: ddev/github-action-setup-ddev@v1
+        with:
+          autostart: false
+
+      - name: Start DDEV
+        run: task ddev:start
+
+      - name: Composer - validate
+        run: ddev composer validate --strict
+
+      - name: Composer - normalize
+        run: ddev composer normalize --dry-run
+
+      - name: PHP coding standards
+        run: ddev phpcs
+
+      - name: Code analysis
+        run: task code-analysis:phpstan
+
+      - name: Rector
+        run: task code-analysis:rector -- --dry-run

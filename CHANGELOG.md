@@ -9,6 +9,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Drupal 11 compatibility.
+
 ## [1.1.2] - 2025-03-03
 
 - Update submit click selector.

@@ -1,22 +1,35 @@
 <?xml version="1.0"?>
+<!-- This file is copied from config/drupal-module/php/.phpcs.xml.dist in https://github.com/itk-dev/devops_itkdev-docker. -->
+<!-- Feel free to edit the file, but consider making a pull request if you find a general issue with the file. -->
+
 <ruleset name="PHP_CodeSniffer">
   <description>The coding standard.</description>
 
   <file>.</file>
-  <exclude-pattern>vendor/</exclude-pattern>
 
-  <!-- Show progress of the run -->
+  <!-- Exclude generated files -->
+  <exclude-pattern>vendor</exclude-pattern>
+  <exclude-pattern>rector.php</exclude-pattern>
+  <!-- DDEV -->
+  <exclude-pattern>web</exclude-pattern>
+
   <arg value="p"/>
   <arg value="s"/>
 
   <arg name="extensions" value="php,module,inc,install,test,profile,theme,css,info,txt,yml"/>
-  <config name="drupal_core_version" value="9"/>
+
+  <config name="drupal_core_version" value="11"/>
 
   <rule ref="Drupal">
+    <!-- <exclude name="Drupal.Files.TxtFileLineLength.TooLong"/> -->
     <!-- We want to be able to use "package" and "version" in our custom modules -->
     <exclude name="Drupal.InfoFiles.AutoAddedKeys.Project"/>
     <exclude name="Drupal.InfoFiles.AutoAddedKeys.Version"/>
+    <exclude name="Drupal.NamingConventions.ValidEnumCase.NoUpperAcronyms" />
+    <exclude name="Drupal.NamingConventions.ValidEnumCase.NoUnderscores" />
   </rule>
-
-  <rule ref="DrupalPractice"/>
+  <rule ref="Squiz.Strings.DoubleQuoteUsage.NotRequired"/>
+  <rule ref="Drupal.Commenting.VariableComment.Missing">
+    <exclude-pattern>src/Settings/</exclude-pattern>
+  </rule>
 </ruleset>

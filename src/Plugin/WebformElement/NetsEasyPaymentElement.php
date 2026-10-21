@@ -184,7 +184,7 @@ class NetsEasyPaymentElement extends WebformElementBase {
             ])->toString(TRUE)->getGeneratedUrl(),
         ],
         '#limit_validation_errors' => [],
-        '#element_validate' => [[$this::class, 'validatePayment']],
+        '#element_validate' => [[static::class, 'validatePayment']],
       ];
       $form['os2forms_payment_reference_field'] = [
         '#type' => 'hidden',
