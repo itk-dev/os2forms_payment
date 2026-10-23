@@ -111,14 +111,11 @@ tasks:
     desc: Start DDEV setup (https://github.com/ddev/ddev-drupal-contrib)
     # https://github.com/ddev/ddev-drupal-contrib
     cmds:
-      - ddev add-on get ddev/ddev-drupal-contrib
-      - ddev restart
+      - ddev start
       - task: composer:install:lenient
       # @todo Remove --no-security-blocking when possible.
       - ddev poser --no-interaction --no-security-blocking
       - ddev symlink-project
-      # Detect expected Drupal and PHP versions.
-      - ddev config --update
 
   composer:install:lenient:
     cmds:

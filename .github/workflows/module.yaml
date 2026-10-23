@@ -1,4 +1,4 @@
-name: Project
+name: Module
 
 env:
   COMPOSE_USER: runner
@@ -17,15 +17,19 @@ jobs:
     name: PHP
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: go-task/setup-task@v1
+      - uses: actions/checkout@v7
+      - uses: go-task/setup-task@v2
       # https://github.com/ddev/github-action-setup-ddev
       - uses: ddev/github-action-setup-ddev@v1
         with:
           autostart: false
 
       - name: Start DDEV
-        run: task ddev:start
+        # https://github.com/ddev/ddev-drupal-contrib
+        run: |
+          ddev start
+          ddev poser --no-interaction --no-security-blocking
+          ddev symlink-project
 
       - name: Composer - validate
         run: ddev composer validate --strict
@@ -37,7 +41,10 @@ jobs:
         run: ddev phpcs
 
       - name: Code analysis
-        run: task code-analysis:phpstan
+        run: ddev phpstan
 
       - name: Rector
-        run: task code-analysis:rector -- --dry-run
+        run: ddev php vendor/bin/rector --dry-run
+
+      - name: Composer - audit
+        run: ddev composer audit

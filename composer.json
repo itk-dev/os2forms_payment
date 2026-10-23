@@ -39,28 +39,5 @@
             "ergebnis/composer-normalize": true,
             "symfony/runtime": true
         }
-    },
-    "scripts": {
-        "code-analysis": [
-            "@code-analysis/drupal-check"
-        ],
-        "code-analysis/drupal-check": [
-            "drupal-check --deprecations --analysis --exclude-dir=vendor *.* src"
-        ],
-        "coding-standards-apply": [
-            "@coding-standards-apply/phpcbf"
-        ],
-        "coding-standards-apply/phpcbf": [
-            "phpcbf --standard=phpcs.xml.dist"
-        ],
-        "coding-standards-check": [
-            "@coding-standards-check/phpcs"
-        ],
-        "coding-standards-check/phpcs": [
-            "phpcs --standard=phpcs.xml.dist"
-        ],
-        "test": [
-            "phpunit tests"
-        ]
     }
 }
